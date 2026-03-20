@@ -185,7 +185,7 @@ netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomex
 
 ### Service-Based Exec (smbexec / psexec)
 
-> **⚠️ `smbexec.py` against DCs:** smbexec uses SVCCTL to create a temporary service. Domain Controllers enforce `PacketPrivacy` authentication level on SVCCTL, which impacket does not negotiate — service creation fails with `STATUS_OBJECT_NAME_NOT_FOUND`. This is the same root cause as `secretsdump -use-vss` failures. `smbexec.py` works normally against member servers. Use `wmiexec.py` for DC targets.
+> **⚠️ `smbexec.py` against DCs:** `smbexec.py` fails against Domain Controllers with `STATUS_OBJECT_NAME_NOT_FOUND` when opening `\pipe\svcctl`. DCs are stricter about named pipe open parameters than member servers — smbexec's flags are rejected where `services.py`'s are not. Use `services.py` for service management on DCs, or `wmiexec.py` for remote execution.
 
 ```bash
 # impacket — smbexec (interactive semi-shell; works against member servers)
