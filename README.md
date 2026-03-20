@@ -138,9 +138,13 @@ Wmi exec 192.168.1.10 -UserName jdoe -UserDomain DOMAIN \
 wmiexec.py -k -no-pass DOMAIN/jdoe@dc01.domain.local "hostname"
 
 # Titanis — Kerberos
-# ⚠️ Use IP address as target; FQDN targets fail on DCOM activation.
-# Kerberos auth requires FQDN for SPN resolution, making Titanis Kerberos WMI exec non-functional.
-Wmi exec 192.168.1.10 -UserName jdoe@DOMAIN -Kdc 192.168.1.1 -Password Password123 "hostname"
+# Use the short hostname as target (for Kerberos SPN + application protocol);
+# use -ha for the actual TCP connection (IP or FQDN). FQDNs as the target fail
+# because the server expects the short hostname in the WMI activation request.
+Wmi exec dc01 -ha 192.168.1.10 -UserName jdoe@DOMAIN -Kdc 192.168.1.1 -Password Password123 "hostname"
+
+# Titanis — Kerberos with ccache TGT (Titanis-generated only; see TicketCache note)
+Wmi exec dc01 -ha 192.168.1.10 -Tgt /tmp/jdoe.ccache -Kdc 192.168.1.1 "hostname"
 ```
 
 [↑ Back to Index](#index)
