@@ -153,12 +153,13 @@ Wmi exec dc01 -ha 192.168.1.10 -Tgt /tmp/jdoe.ccache -Kdc 192.168.1.1 "hostname"
 
 ### DCOM Exec
 
-> **⚠️ Titanis `Dcom invoke` status:** Confirmed non-functional for remote code execution. Titanis calls `IDispatch::GetIDsOfNames` once on the root activation object — it does not traverse dotted property chains. All viable exec CLSIDs require multi-hop property access before reaching an executable method:
-> - `MMC20.Application` → `Document.ActiveView.ExecuteShellCommand`
-> - `ShellBrowserWindow` (`C08AFD90-F2A1-11D1-8455-00A0C91F3880`) → `Document.Application.ShellExecute`
-> - `ShellWindows` (`9BA05972-F6A8-11CF-A442-00A0C90A8F39`) → `Item.Document.Application.ShellExecute`
->
-> All three return `DISP_E_MEMBERNOTFOUND` (0x80020003). Note: Titanis accepts registered ProgIDs (e.g., `MMC20.Application`) or raw GUIDs — bare short names (e.g., `ShellWindows`) fail with "Unrecognized Guid format". Use `dcomexec.py` or NetExec instead.
+> **Titanis `Dcom invoke` — CLSID lookup SOP:**
+> - **ProgID resolution is local.** Titanis resolves ProgIDs (e.g., `MMC20.Application`) from the attacker's registry, not the target's. From Linux there is no registry to resolve against; from Windows the attacker's CLSID may differ from the target's. Always use `Reg` to look up the actual CLSID on the remote system, then pass the raw GUID.
+> - **Single-hop IDispatch only.** Titanis calls `IDispatch::GetIDsOfNames` on the root activation object and does not traverse dotted property chains. The three commonly documented exec CLSIDs all bury their exec method behind multi-hop access and will return `DISP_E_MEMBERNOTFOUND` (0x80020003):
+>   - `MMC20.Application` → `Document.ActiveView.ExecuteShellCommand`
+>   - `ShellBrowserWindow` → `Document.Application.ShellExecute`
+>   - `ShellWindows` → `Item.Document.Application.ShellExecute`
+> - A CLSID whose exec method is directly on the root IDispatch object will work. Finding one requires enumeration on the target.
 
 ```bash
 # impacket
@@ -174,9 +175,13 @@ dcomexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami" -object ShellBrowserWi
 # NetExec
 netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomexec
 
-# Titanis — non-functional for all tested CLSIDs; shown for API reference only
-# Dcom invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
-#   MMC20.Application Document.ActiveView.ExecuteShellCommand cmd "" "/c whoami"
+# Titanis — Step 1: look up CLSID on the remote system (ProgID resolution is local, not remote)
+Reg query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+  'HKLM\SOFTWARE\Classes\MMC20.Application\CLSID'
+# Step 2: invoke with the raw GUID from Step 1
+# Note: exec method must be at the root IDispatch level — standard exec CLSIDs fail (multi-hop)
+Dcom invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+  '{49B2791A-B1AE-4C90-9B8E-E860BA07F889}' MethodName arg1 arg2
 ```
 
 [↑ Back to Index](#index)
