@@ -185,7 +185,7 @@ netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomex
 
 ### Service-Based Exec (smbexec / psexec)
 
-> **⚠️ Titanis `Scm` status:** All `Scm` subcommands are non-functional. Diagnostic tracing confirms Titanis hardcodes `auth context <none> with level None` for the SVCCTL RPC bind — no flag combination fixes this (`-EncryptRpc`, `-PreferSmb`, `-Spnego`, Kerberos all fail with the same `0x1C010002` fault). Needs a Titanis code fix. Use `smbexec.py`, `psexec.py`, or Metasploit for service-based execution.
+> **⚠️ Titanis `Scm` status:** All `Scm` subcommands are non-functional. tcpdump confirms the RPC bind is accepted by the server; the fault (`0x1C010002` = `nca_op_rng_error`) fires on the subsequent request because Titanis calls **Opnum 64** on the SVCCTL interface, which only defines opnums 0–47 (MS-SCMR). Wrong opnum in Titanis's SVCCTL client; needs a Titanis code fix. Use `smbexec.py`, `psexec.py`, or Metasploit for service-based execution.
 
 > **⚠️ `smbexec.py` against DCs:** smbexec uses SVCCTL to create a temporary service. Domain Controllers enforce `PacketPrivacy` authentication level on SVCCTL, which impacket does not negotiate — service creation fails with `STATUS_OBJECT_NAME_NOT_FOUND`. This is the same root cause as `secretsdump -use-vss` failures. `smbexec.py` works normally against member servers. Use `wmiexec.py` for DC targets.
 
@@ -1725,7 +1725,7 @@ Reg setsd 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
 
 ### Service Enumeration
 
-> **⚠️ Titanis `Scm` status:** All `Scm` subcommands are non-functional. Diagnostic tracing confirms Titanis hardcodes `auth context <none> with level None` for the SVCCTL RPC bind regardless of flags. Needs a Titanis code fix. Use `services.py` (impacket) or `netexec smb --services` instead.
+> **⚠️ Titanis `Scm` status:** All `Scm` subcommands are non-functional. tcpdump confirms the RPC bind is accepted; the fault (`0x1C010002` = `nca_op_rng_error`) fires because Titanis calls Opnum 64 on the SVCCTL interface, which only defines opnums 0–47 (MS-SCMR). Wrong opnum in Titanis's SVCCTL client; needs a Titanis code fix. Use `services.py` (impacket) or `netexec smb --services` instead.
 
 ```bash
 # impacket
