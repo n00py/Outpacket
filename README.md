@@ -975,7 +975,7 @@ smbclient-ng --host 192.168.1.10 -u jdoe -p Password123 --domain DOMAIN snapshot
 Smb2Client enumsnapshots \\192.168.1.10\C$ -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
 
-> **@GMT snapshot path access:** Once you have a snapshot timestamp from `list_snapshots` (smbclient.py) or `enumsnapshots` (Titanis), access files by prepending the token to the path:
+> **@GMT snapshot path access:** `@GMT-...` is not a real directory — Windows SRV.SYS intercepts the token in the SMB2 CREATE path and redirects to the VSS snapshot. Tools that navigate paths component-by-component (including `Smb2Client get`) will get `STATUS_OBJECT_PATH_NOT_FOUND`. Use smbclient.py or native smbclient, which send the full path in a single CREATE request:
 >
 > ```bash
 > # impacket smbclient.py — list_snapshots then get
